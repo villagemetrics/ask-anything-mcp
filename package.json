@@ -1,0 +1,37 @@
+{
+  "name": "@villagemetrics/ask-anything-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Village Metrics behavioral data access",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "ask-anything-mcp": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "mocha test/**/*.test.js --timeout 30000",
+    "test:manual": "node test/manual-test.js",
+    "dev": "VM_LOG_LEVEL=debug node src/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "axios": "^1.7.2",
+    "bunyan": "^1.8.15",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "mocha": "^10.8.0",
+    "chai": "^4.3.10"
+  },
+  "keywords": [
+    "mcp",
+    "ai",
+    "village-metrics"
+  ],
+  "author": "Doug Kerwin",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
