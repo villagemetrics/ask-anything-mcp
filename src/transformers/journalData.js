@@ -3,6 +3,35 @@ import { createLogger } from '../utils/logger.js';
 const logger = createLogger('JournalDataTransformer');
 
 /**
+ * Calculate days ago from a date string
+ * @param {string} dateString - Date in YYYY-MM-DD or ISO format
+ * @returns {number|null} Days ago (0 for today, 1 for yesterday, etc.) or null if invalid
+ */
+function calculateDaysAgo(dateString) {
+  if (!dateString) return null;
+  
+  try {
+    // Extract just the date part if it's a full datetime
+    const datePart = dateString.split('T')[0];
+    const entryDate = new Date(datePart + 'T00:00:00.000Z');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to midnight for accurate day calculation
+    
+    if (isNaN(entryDate.getTime())) {
+      return null; // Invalid date
+    }
+    
+    const diffTime = today.getTime() - entryDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, diffDays); // Ensure non-negative
+  } catch (error) {
+    logger.warn('Failed to calculate days ago', { dateString, error: error.message });
+    return null;
+  }
+}
+
+/**
  * Transform journal search results for LLM decision-making
  * Keep only essential data to help LLM decide which entries to examine further
  */
@@ -24,6 +53,7 @@ export function transformJournalSearchResults(rawResults, childName) {
       return {
         journalEntryId: document.journalEntryId,
         date: document.date,
+        daysAgo: calculateDaysAgo(document.date),
         authorName: document.userName || 'Unknown',
         // Use the most relevant summary available
         summary: document.results?.shortTitle || 
