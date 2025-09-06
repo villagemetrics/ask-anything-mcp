@@ -7,6 +7,8 @@ import { GetBehaviorScoresTool } from './tracking/getBehaviorScores.js';
 import { GetDateRangeMetadataTool } from './tracking/getDateRangeMetadata.js';
 // Journal tools
 import { SearchJournalsTool } from './journal/searchJournals.js';
+import { GetJournalEntryTool } from './journal/getJournalEntry.js';
+import { GetJournalDetailsTool } from './journal/getJournalDetails.js';
 
 const logger = createLogger('ToolRegistry');
 
@@ -25,6 +27,8 @@ export class ToolRegistry {
       getDateRangeMetadata: new GetDateRangeMetadataTool(sessionManager),
       // Journal tools
       searchJournals: new SearchJournalsTool(sessionManager),
+      getJournalEntry: new GetJournalEntryTool(sessionManager),
+      getJournalDetails: new GetJournalDetailsTool(sessionManager),
       // Future tools will be added here:
       // Medical tools
       // Analysis tools
@@ -47,6 +51,8 @@ export class ToolRegistry {
     
     // Register journal tools
     this.registerToolClass(SearchJournalsTool, this.toolInstances.searchJournals);
+    this.registerToolClass(GetJournalEntryTool, this.toolInstances.getJournalEntry);
+    this.registerToolClass(GetJournalDetailsTool, this.toolInstances.getJournalDetails);
     
     logger.info('Tools registered', { count: this.tools.size });
   }

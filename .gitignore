@@ -1,7 +1,7 @@
 node_modules/
 *.log
-.env
-.env.local
+.env.secrets.local
+.env.secrets*
 .DS_Store
 test-results/
 coverage/

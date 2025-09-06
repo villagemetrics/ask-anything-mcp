@@ -80,7 +80,9 @@ function showMenu() {
   console.log('3. Select child');
   console.log('4. Get date range metadata');
   console.log('5. Get behavior scores');
-  console.log('6. Search journals');
+  console.log('6. Search journal entries');
+  console.log('7. Get journal entry');
+  console.log('8. Get journal entry details');
   console.log('9. Send custom JSON-RPC');
   console.log('q. Quit');
   console.log('');
@@ -133,6 +135,26 @@ function showMenu() {
           sendMessage('tools/call', {
             name: 'search_journals',
             arguments: { query }
+          });
+          setTimeout(showMenu, 5000);
+        });
+        break;
+        
+      case '7':
+        rl.question('Enter journal entry ID: ', (journalEntryId) => {
+          sendMessage('tools/call', {
+            name: 'get_journal_entry',
+            arguments: { journalEntryId }
+          });
+          setTimeout(showMenu, 5000);
+        });
+        break;
+        
+      case '8':
+        rl.question('Enter journal entry ID: ', (journalEntryId) => {
+          sendMessage('tools/call', {
+            name: 'get_journal_entry_details',
+            arguments: { journalEntryId }
           });
           setTimeout(showMenu, 5000);
         });

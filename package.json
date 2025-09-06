@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "test": "mocha test/**/*.test.js --timeout 30000",
+    "test": "mocha test/**/*.test.js --timeout 30000 --require ./test/setup.cjs",
     "test:manual": "node test/manual-test.js",
     "dev": "VM_LOG_LEVEL=debug node src/index.js"
   },
@@ -21,8 +21,9 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "mocha": "^10.8.0",
-    "chai": "^4.3.10"
+    "chai": "^4.3.10",
+    "dotenv": "^17.2.2",
+    "mocha": "^10.8.0"
   },
   "keywords": [
     "mcp",

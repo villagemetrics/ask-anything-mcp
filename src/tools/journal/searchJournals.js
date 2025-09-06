@@ -12,14 +12,14 @@ export class SearchJournalsTool {
 
   static get definition() {
     return {
-      name: 'search_journals',
-      description: 'Search journal entries using natural language queries. Returns relevant entries based on semantic similarity.',
+      name: 'search_journal_entries',
+      description: 'Search journal entries using semantic (meaning-based) search powered by AI. Finds content related to the overall meaning of your query, not just exact keyword matches. Works best with natural language descriptions of what you\'re looking for.',
       inputSchema: {
         type: 'object',
         properties: {
           query: {
             type: 'string',
-            description: 'Natural language search query (e.g., "tantrums last week", "bedtime struggles")'
+            description: 'Describe what you\'re looking for in natural language. Examples: "tantrum at bedtime", "successful strategies for transitions", "funny moments with siblings", "challenging behaviors at school". You can combine related concepts in one query, but use separate searches for unrelated topics.'
           },
           limit: {
             type: 'number',

@@ -12,10 +12,9 @@ export class VMApiClient {
       throw new Error('VM_API_TOKEN is required');
     }
 
-    // Enforce HTTPS for security - no exceptions
-    const url = new URL(this.baseUrl);
-    if (url.protocol !== 'https:') {
-      throw new Error(`HTTPS required for API connections. Got: ${url.protocol}//${url.hostname}`);
+    // Enforce HTTPS always
+    if (!this.baseUrl.startsWith('https://')) {
+      throw new Error('VM_API_BASE_URL must use HTTPS');
     }
 
     this.client = axios.create({
@@ -24,26 +23,42 @@ export class VMApiClient {
         'Authorization': `Bearer ${this.token}`,
         'Content-Type': 'application/json'
       },
-      timeout: 30000
+      timeout: 30000  // 30 seconds for potentially slow vector searches
     });
 
     // Add response interceptor for consistent error logging
     this.client.interceptors.response.use(
-      // Success responses pass through unchanged
-      (response) => response,
-      // Error responses get enhanced logging
-      (error) => {
-        logger.error('API request failed', {
-          method: error.config?.method?.toUpperCase(),
+      response => {
+        logger.debug('API request successful', {
+          method: response.config.method,
+          url: response.config.url,
+          status: response.status
+        });
+        return response;
+      },
+      error => {
+        const errorDetails = {
+          method: error.config?.method,
           url: error.config?.url,
           status: error.response?.status,
           statusText: error.response?.statusText,
-          responseData: error.response?.data,
-          requestData: error.config?.data,
-          errorMessage: error.message
-        });
+          // HIPAA Compliance: Response data may contain PHI, so we comment out for production
+          // Uncomment for debugging non-production environments
+          // data: error.response?.data,
+          // requestData: error.config?.data,
+          message: error.message
+        };
         
-        // Re-throw the error so calling code can still handle it
+        logger.error('API request failed', errorDetails);
+        
+        // Enhance error message with HTTP details
+        if (error.response) {
+          error.message = `API Error ${error.response.status}: ${error.response.statusText}`;
+          if (error.response.data?.message) {
+            error.message += ` - ${error.response.data.message}`;
+          }
+        }
+        
         return Promise.reject(error);
       }
     );
@@ -51,87 +66,69 @@ export class VMApiClient {
     logger.info('API client initialized', { baseUrl: this.baseUrl });
   }
 
-  async getChildren(userId) {
+  async getChildren() {
     try {
-      // Use the actual endpoint from your API
-      const response = await this.client.get(`/v1/children/me/all`);
+      const response = await this.client.get('/v1/children/me/all');
+      logger.debug('Raw API response for children', { data: response.data });
       
-      // API returns { parentChildren: [...], caregiverChildren: [...] }
-      // Add relationship metadata to each child
-      const parentChildren = (response.data.parentChildren || []).map(child => ({
-        ...child,
-        relationship: 'parent'
-      }));
+      // Combine parent and caregiver children into a single array
+      const allChildren = [];
       
-      const caregiverChildren = (response.data.caregiverChildren || []).map(child => ({
-        ...child,
-        relationship: 'caregiver'
-      }));
+      if (response.data.parentChildren) {
+        response.data.parentChildren.forEach(child => {
+          allChildren.push({
+            ...child,
+            relationship: 'parent'
+          });
+        });
+      }
       
-      const allChildren = [...parentChildren, ...caregiverChildren];
-      
-      logger.debug('Retrieved children', { 
-        userId, 
-        parentCount: parentChildren.length,
-        caregiverCount: caregiverChildren.length,
-        totalCount: allChildren.length 
-      });
+      if (response.data.caregiverChildren) {
+        response.data.caregiverChildren.forEach(child => {
+          allChildren.push({
+            ...child,
+            relationship: 'caregiver'
+          });
+        });
+      }
       
       return allChildren;
     } catch (error) {
-      // Interceptor already logged the details, just throw a clean error
-      throw new Error(`Failed to get children: ${error.response?.status || 'Unknown'} - ${error.message}`);
+      throw error;
     }
   }
 
   async getBehaviorData(childId, date) {
     try {
       const response = await this.client.get(`/v1/children/${childId}/track-data/${date}`);
-      
-      // Log the raw response structure to debug the empty scores issue
-      logger.debug('Raw behavior data received', {
-        childId,
+      logger.debug('Raw API response for behavior data', { 
         date,
-        responseKeys: Object.keys(response.data || {}),
-        goalsExists: !!response.data.goals,
-        goalsCount: response.data.goals?.length || 0,
-        goalsStructure: response.data.goals?.slice(0, 2) // Show first 2 goals structure
+        hasData: !!response.data,
+        scoreCount: response.data?.goals?.length || 0
       });
-      
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
-        logger.debug('No behavior data found', { childId, date });
         return null;
       }
-      // Interceptor already logged the HTTP details
       throw error;
     }
   }
 
   async searchJournals(childId, query, options = {}) {
     try {
-      const { limit = 10, offset = 0 } = options;
-      
       const response = await this.client.post(`/v1/children/${childId}/journal/search`, {
-        q: query,
-        limit,
-        offset
+        q: query,  // API expects 'q' not 'query'
+        limit: options.limit || 10,
+        offset: options.offset || 0
       });
-      
-      logger.debug('Journal search API call completed', { 
-        childId,
-        query: query.substring(0, 100),
-        resultCount: response.data.results?.length || 0
+      logger.debug('Raw API response for journal search', { 
+        query,
+        resultCount: response.data?.results?.length || 0,
+        hasMore: response.data?.hasMore || false
       });
-      
       return response.data;
     } catch (error) {
-      // Interceptor already logged the HTTP details, just add context
-      logger.error('Failed to search journals via API', { 
-        childId,
-        query: query.substring(0, 100)
-      });
       throw error;
     }
   }
@@ -139,25 +136,32 @@ export class VMApiClient {
   async getDateRangeMetadata(childId) {
     try {
       const response = await this.client.get(`/v1/children/${childId}/analysis/date-range-metadata`);
-      
-      logger.debug('Date range metadata received', {
-        childId,
-        responseKeys: Object.keys(response.data || {}),
-        hasRecentActivity: !!response.data.recentDailyActivity,
-        lastAnalysisDate: response.data.recentDailyActivity?.endDate,
-        // Debug the missing Aug 30th issue
-        recentDailyCount: response.data.recentDailyActivity?.dailyEntries?.length || 0,
-        firstRecentDay: response.data.recentDailyActivity?.dailyEntries?.[0],
-        lastRecentDay: response.data.recentDailyActivity?.dailyEntries?.[response.data.recentDailyActivity?.dailyEntries?.length - 1]
+      logger.debug('Raw API response for date range metadata', { 
+        hasData: !!response.data,
+        dataAgeInDays: response.data?.daysBehindToday
       });
-      
       return response.data;
     } catch (error) {
-      logger.error('Failed to get date range metadata', { 
-        childId,
-        error: error.message,
-        status: error.response?.status 
+      throw error;
+    }
+  }
+
+  async getJournalEntry(childId, journalEntryId) {
+    try {
+      // Use the new simplified endpoint that doesn't require userId/date
+      const url = `/v1/children/${childId}/journal/entries/${journalEntryId}`;
+      
+      const response = await this.client.get(url);
+      logger.debug('Raw API response for journal entry', { 
+        journalEntryId,
+        hasResults: !!response.data?.results,
+        hashtagCount: response.data?.results?.hashtags?.length || 0
       });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
       throw error;
     }
   }
