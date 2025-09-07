@@ -49,4 +49,20 @@ npm test           # Run all tests (automatically loads .env files)
 npm run test:manual  # Interactive MCP testing
 ```
 
+### Generate Example Responses
+
+Generate reference documentation with example responses from all MCP tools:
+
+```bash
+# Generate to local examples/ directory (gitignored for manual copy)
+node scripts/generate-example-responses.js
+
+# Generate directly to the product repo documentation
+node scripts/generate-example-responses.js --output=../product/docs/mcp
+```
+
+This creates `ask-anything-mcp-tool-examples.md` with pretty-printed request/response examples for all tools, useful for debugging and documentation.
+
+**Note:** The generated examples file contains real API responses with personal data, so it's excluded from this repo via `.gitignore`. The examples are published in the `@villagemetrics/product` repository at `docs/mcp/ask-anything-mcp-tool-examples.md`.
+
 Tests use real API calls following Village Metrics patterns - no mocking unless necessary. Tests fail clearly if dependencies are missing.

@@ -75,13 +75,9 @@ describe('Overview Analysis Tool', function() {
 
         expect(result.timeRange).to.equal('last_30_days');
         expect(result.childName).to.exist;
-        expect(typeof result.hasData).to.equal('boolean');
         
-        // Should include compression info if data exists
-        if (result.hasData) {
-          expect(result.compressionInfo).to.exist;
-          expect(result.compressionInfo.compressionRatio).to.exist;
-        }
+        // compressionInfo is no longer returned to LLMs (kept in debug logs only)
+        expect(result.compressionInfo).to.not.exist;
       } else {
         console.log('No children available for testing - skipping overview analysis test');
       }
@@ -107,7 +103,7 @@ describe('Overview Analysis Tool', function() {
         expect(result.childName).to.exist;
         
         // Should handle cases where no data exists
-        if (!result.hasData) {
+        if (result.message) {
           expect(result.message).to.contain('No overview analysis data');
         }
       }

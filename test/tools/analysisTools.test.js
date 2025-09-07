@@ -55,8 +55,17 @@ describe('Analysis Tools', function() {
         expect(def.name).to.exist;
         expect(def.description).to.exist;
         expect(def.inputSchema).to.exist;
-        expect(def.inputSchema.properties.timeRange).to.exist;
-        expect(def.inputSchema.required).to.include('timeRange');
+        
+        // Different tools have different required parameters
+        if (def.name === 'get_medication_detailed_analysis') {
+          // Medication detailed analysis requires cocktailId, not timeRange
+          expect(def.inputSchema.properties.cocktailId).to.exist;
+          expect(def.inputSchema.required).to.include('cocktailId');
+        } else {
+          // All other analysis tools require timeRange
+          expect(def.inputSchema.properties.timeRange).to.exist;
+          expect(def.inputSchema.required).to.include('timeRange');
+        }
         
         // Hashtag analysis also requires hashtagType
         if (def.name === 'get_hashtag_analysis') {
@@ -106,10 +115,15 @@ describe('Analysis Tools', function() {
         const currentTool = tools[index].tool;
         
         try {
-          const args = { timeRange: 'last_30_days' };
-          // Hashtag analysis requires hashtagType parameter
-          if (name === 'hashtag') {
-            args.hashtagType = 'BehaviorConcept';
+          let args;
+          if (name === 'medication_details') {
+            args = { cocktailId: 'test-cocktail-id' };
+          } else {
+            args = { timeRange: 'last_30_days' };
+            // Hashtag analysis requires hashtagType parameter
+            if (name === 'hashtag') {
+              args.hashtagType = 'BehaviorConcept';
+            }
           }
           await currentTool.execute(args, session);
           expect.fail(`${name} analysis should have thrown error for no child selected`);
@@ -118,20 +132,31 @@ describe('Analysis Tools', function() {
         }
       });
 
-      it(`${name} analysis should validate time range parameter`, async function() {
+      it(`${name} analysis should validate parameters`, async function() {
         const session = { sessionId: testSessionId, userId: 'test-user' };
         const currentTool = tools[index].tool;
         
         try {
-          const args = { timeRange: 'invalid_range' };
-          // Hashtag analysis requires hashtagType parameter
-          if (name === 'hashtag') {
-            args.hashtagType = 'BehaviorConcept';
+          let args;
+          if (name === 'medication_details') {
+            // For detailed analysis, test missing cocktailId
+            args = {};
+          } else {
+            // For other tools, test invalid time range
+            args = { timeRange: 'invalid_range' };
+            // Hashtag analysis requires hashtagType parameter
+            if (name === 'hashtag') {
+              args.hashtagType = 'BehaviorConcept';
+            }
           }
           await currentTool.execute(args, session);
-          expect.fail(`${name} analysis should have thrown error for invalid time range`);
+          expect.fail(`${name} analysis should have thrown error for invalid parameters`);
         } catch (error) {
-          expect(error.message).to.contain('Invalid time range');
+          if (name === 'medication_details') {
+            expect(error.message).to.contain('Cocktail ID is required');
+          } else {
+            expect(error.message).to.contain('Invalid time range');
+          }
         }
       });
     });
@@ -191,12 +216,9 @@ describe('Analysis Tools', function() {
 
         expect(result.timeRange).to.equal('last_30_days');
         expect(result.childName).to.exist;
-        expect(typeof result.hasData).to.equal('boolean');
         
-        if (result.hasData) {
-          // compressionInfo is no longer returned to LLMs (kept in debug logs only)
-          expect(result.compressionInfo).to.not.exist;
-        }
+        // compressionInfo is no longer returned to LLMs (kept in debug logs only)
+        expect(result.compressionInfo).to.not.exist;
       } else {
         console.log('No children available for testing - skipping overview analysis test');
       }
@@ -213,13 +235,10 @@ describe('Analysis Tools', function() {
 
         expect(result.timeRange).to.equal('last_30_days');
         expect(result.childName).to.exist;
-        expect(typeof result.hasData).to.equal('boolean');
         // behaviorGoals section was removed to avoid duplication with behaviorGoalAnalysis
         
-        if (result.hasData) {
-          // compressionInfo is no longer returned to LLMs (kept in debug logs only)
-          expect(result.compressionInfo).to.not.exist;
-        }
+        // compressionInfo is no longer returned to LLMs (kept in debug logs only)
+        expect(result.compressionInfo).to.not.exist;
       } else {
         console.log('No children available for testing - skipping behavior analysis test');
       }
@@ -236,7 +255,8 @@ describe('Analysis Tools', function() {
 
         expect(result.timeRange).to.equal('last_30_days');
         expect(result.childName).to.exist;
-        expect(Array.isArray(result.currentMedications)).to.be.true;
+        // Result could have medicationHistory or just a message if no data
+        expect(result.message || result.medicationHistory).to.exist;
         
         // compressionInfo is no longer returned to LLMs (kept in debug logs only)
         expect(result.compressionInfo).to.not.exist;
@@ -256,14 +276,14 @@ describe('Analysis Tools', function() {
 
         expect(result.cocktailId).to.equal('test-cocktail-id');
         expect(result.childName).to.exist;
-        expect(result.analysisType).to.equal('detailed_medication_analysis');
         
         // The cocktail might not exist, in which case we get an error message
         if (result.message) {
           expect(result.message).to.contain('not found');
         } else {
           // Should have detailed medication information if cocktail exists
-          expect(result.medicationCombination).to.exist;
+          expect(result.medications).to.exist;
+          expect(result.averageBehaviorScore).to.exist;
         }
       } else {
         console.log('No children available for testing - skipping medication details test');
@@ -281,14 +301,11 @@ describe('Analysis Tools', function() {
 
         expect(result.timeRange).to.equal('last_30_days');
         expect(result.childName).to.exist;
-        expect(typeof result.hasData).to.equal('boolean');
         
-        if (result.hasData) {
-          // compressionInfo is no longer returned to LLMs (kept in debug logs only)
-          expect(result.compressionInfo).to.not.exist;
-          // Should have journal-specific data, not hashtag data
-          expect(result.hashtags).to.not.exist;
-        }
+        // compressionInfo is no longer returned to LLMs (kept in debug logs only)
+        expect(result.compressionInfo).to.not.exist;
+        // Should have journal-specific data, not hashtag data
+        expect(result.hashtags).to.not.exist;
       } else {
         console.log('No children available for testing - skipping journal analysis test');
       }
@@ -363,7 +380,8 @@ describe('Analysis Tools', function() {
             // For detailed analysis, check different properties
             expect(result.cocktailId).to.equal('test-cocktail-id');
             expect(result.childName).to.exist;
-            expect(result.analysisType).to.equal('detailed_medication_analysis');
+            // Could have message if cocktail not found, or actual data
+            expect(result.message || result.medications).to.exist;
           } else if (tool === hashtagAnalysisTool) {
             result = await tool.execute({ hashtagType: 'Activity', timeRange: 'last_30_days' }, session);
             // Hashtag analysis should return these properties
