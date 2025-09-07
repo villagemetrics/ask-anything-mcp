@@ -9,6 +9,13 @@ import { GetDateRangeMetadataTool } from './tracking/getDateRangeMetadata.js';
 import { SearchJournalsTool } from './journal/searchJournals.js';
 import { GetJournalEntryTool } from './journal/getJournalEntry.js';
 import { GetJournalDetailsTool } from './journal/getJournalDetails.js';
+// Analysis tools
+import { GetOverviewAnalysisTool } from './analysis/getOverviewAnalysis.js';
+import { GetBehaviorAnalysisTool } from './analysis/getBehaviorAnalysis.js';
+import { GetMedicationAnalysisTool } from './analysis/getMedicationAnalysis.js';
+import { GetJournalAnalysisTool } from './analysis/getJournalAnalysis.js';
+import { GetHashtagAnalysisTool } from './analysis/getHashtagAnalysis.js';
+import { GetMedicationDetailedAnalysisTool } from './analysis/getMedicationDetailedAnalysis.js';
 
 const logger = createLogger('ToolRegistry');
 
@@ -29,9 +36,14 @@ export class ToolRegistry {
       searchJournals: new SearchJournalsTool(sessionManager),
       getJournalEntry: new GetJournalEntryTool(sessionManager),
       getJournalDetails: new GetJournalDetailsTool(sessionManager),
-      // Future tools will be added here:
-      // Medical tools
       // Analysis tools
+      getOverviewAnalysis: new GetOverviewAnalysisTool(sessionManager),
+      getBehaviorAnalysis: new GetBehaviorAnalysisTool(sessionManager),
+      getMedicationAnalysis: new GetMedicationAnalysisTool(sessionManager),
+      getMedicationDetailedAnalysis: new GetMedicationDetailedAnalysisTool(sessionManager),
+      getJournalAnalysis: new GetJournalAnalysisTool(sessionManager),
+      getHashtagAnalysis: new GetHashtagAnalysisTool(sessionManager),
+      // Future tools will be added here:
       // Math tools
     };
     
@@ -53,6 +65,14 @@ export class ToolRegistry {
     this.registerToolClass(SearchJournalsTool, this.toolInstances.searchJournals);
     this.registerToolClass(GetJournalEntryTool, this.toolInstances.getJournalEntry);
     this.registerToolClass(GetJournalDetailsTool, this.toolInstances.getJournalDetails);
+    
+    // Register analysis tools
+    this.registerToolClass(GetOverviewAnalysisTool, this.toolInstances.getOverviewAnalysis);
+    this.registerToolClass(GetBehaviorAnalysisTool, this.toolInstances.getBehaviorAnalysis);
+    this.registerToolClass(GetMedicationAnalysisTool, this.toolInstances.getMedicationAnalysis);
+    this.registerToolClass(GetMedicationDetailedAnalysisTool, this.toolInstances.getMedicationDetailedAnalysis);
+    this.registerToolClass(GetJournalAnalysisTool, this.toolInstances.getJournalAnalysis);
+    this.registerToolClass(GetHashtagAnalysisTool, this.toolInstances.getHashtagAnalysis);
     
     logger.info('Tools registered', { count: this.tools.size });
   }

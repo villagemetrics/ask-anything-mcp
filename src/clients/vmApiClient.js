@@ -165,4 +165,60 @@ export class VMApiClient {
       throw error;
     }
   }
+
+  async getAnalysisData(childId, timeRange, analysisType) {
+    try {
+      // Fix: Use plural form 'medications' not singular 'medication'
+      const analysisTypeFixed = analysisType === 'medication' ? 'medications' : analysisType;
+      const response = await this.client.get(`/v1/children/${childId}/analysis/${timeRange}/users/village/${analysisTypeFixed}`);
+      logger.debug('Raw API response for analysis data', { 
+        childId,
+        timeRange,
+        analysisType: analysisTypeFixed,
+        hasData: !!response.data,
+        dataSize: JSON.stringify(response.data).length
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async getBehaviorGoals(childId) {
+    try {
+      const response = await this.client.get(`/v1/children/${childId}/goals`);
+      logger.debug('Raw API response for behavior goals', { 
+        childId,
+        goalCount: response.data?.length || 0
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async getMedications(childId) {
+    try {
+      const response = await this.client.get(`/v1/children/${childId}/medications`);
+      logger.debug('Raw API response for medications', { 
+        childId,
+        hasData: !!response.data,
+        medicationCount: Array.isArray(response.data) ? response.data.length : 0,
+        currentMeds: Array.isArray(response.data) ? response.data.filter(m => !m.archived).length : 0,
+        archivedMeds: Array.isArray(response.data) ? response.data.filter(m => m.archived).length : 0
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
 }

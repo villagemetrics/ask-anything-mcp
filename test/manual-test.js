@@ -1,5 +1,18 @@
 import { spawn } from 'child_process';
 import readline from 'readline';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Load environment variables for manual testing
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.join(__dirname, '..');
+
+// Load non-secret environment variables first
+dotenv.config({ path: path.join(projectRoot, '.env.local') });
+// Load secret environment variables (overrides any duplicates)
+dotenv.config({ path: path.join(projectRoot, '.env.secrets.local') });
 
 // Create readline interface for interactive testing
 const rl = readline.createInterface({
@@ -9,10 +22,16 @@ const rl = readline.createInterface({
 
 console.log('Starting MCP server for manual testing...\n');
 
-// Set test token (you'll need to replace with a real one)
+// Check for required token
+if (!process.env.VM_API_TOKEN) {
+  console.error('ERROR: VM_API_TOKEN not found in environment variables.');
+  console.error('Please create .env.secrets.local with your JWT token.');
+  console.error('See README.md for instructions on getting a token.');
+  process.exit(1);
+}
+
 const env = {
   ...process.env,
-  VM_API_TOKEN: process.env.VM_API_TOKEN || 'your_test_token_here',
   VM_LOG_LEVEL: 'debug'
 };
 
@@ -75,6 +94,7 @@ function sendMessage(method, params = {}) {
 // Interactive menu
 function showMenu() {
   console.log('\nAvailable commands:');
+  console.log('=== Basic Tools ===');
   console.log('1. List tools');
   console.log('2. List children');
   console.log('3. Select child');
@@ -83,7 +103,15 @@ function showMenu() {
   console.log('6. Search journal entries');
   console.log('7. Get journal entry');
   console.log('8. Get journal entry details');
-  console.log('9. Send custom JSON-RPC');
+  console.log('=== Analysis Tools ===');
+  console.log('9. Get overview analysis');
+  console.log('10. Get behavior analysis');
+  console.log('11. Get medication analysis');
+  console.log('12. Get medication detailed analysis');
+  console.log('13. Get journal analysis');
+  console.log('14. Get hashtag analysis');
+  console.log('=== Other ===');
+  console.log('15. Send custom JSON-RPC');
   console.log('q. Quit');
   console.log('');
   
@@ -161,6 +189,69 @@ function showMenu() {
         break;
         
       case '9':
+        rl.question('Enter time range (last_7_days, last_30_days, last_90_days, last_180_days, last_365_days): ', (timeRange) => {
+          sendMessage('tools/call', {
+            name: 'get_overview_analysis',
+            arguments: { timeRange }
+          });
+          setTimeout(showMenu, 8000); // Longer timeout for analysis
+        });
+        break;
+        
+      case '10':
+        rl.question('Enter time range (last_7_days, last_30_days, last_90_days, last_180_days, last_365_days): ', (timeRange) => {
+          sendMessage('tools/call', {
+            name: 'get_behavior_analysis',
+            arguments: { timeRange }
+          });
+          setTimeout(showMenu, 8000);
+        });
+        break;
+        
+      case '11':
+        rl.question('Enter time range (last_7_days, last_30_days, last_90_days, last_180_days, last_365_days): ', (timeRange) => {
+          sendMessage('tools/call', {
+            name: 'get_medication_analysis',
+            arguments: { timeRange }
+          });
+          setTimeout(showMenu, 8000);
+        });
+        break;
+        
+      case '12':
+        rl.question('Enter cocktail ID (from medication analysis): ', (cocktailId) => {
+          sendMessage('tools/call', {
+            name: 'get_medication_detailed_analysis',
+            arguments: { cocktailId }
+          });
+          setTimeout(showMenu, 10000); // Extra time for detailed analysis
+        });
+        break;
+        
+      case '13':
+        rl.question('Enter time range (last_7_days, last_30_days, last_90_days, last_180_days, last_365_days): ', (timeRange) => {
+          sendMessage('tools/call', {
+            name: 'get_journal_analysis',
+            arguments: { timeRange }
+          });
+          setTimeout(showMenu, 8000);
+        });
+        break;
+        
+      case '14':
+        console.log('Available hashtag types: BehaviorConcept, Incident, Activity, Emotion, Person, Place, RootCause, Outcome, BehaviorMethod, Food, Time, Object, Event, Action, HealthSymptom, EnvironmentalFactor, CommunicationMode');
+        rl.question('Enter hashtag type: ', (hashtagType) => {
+          rl.question('Enter time range (last_7_days, last_30_days, last_90_days, last_180_days, last_365_days): ', (timeRange) => {
+            sendMessage('tools/call', {
+              name: 'get_hashtag_analysis',
+              arguments: { hashtagType, timeRange }
+            });
+            setTimeout(showMenu, 8000);
+          });
+        });
+        break;
+        
+      case '15':
         rl.question('Enter JSON-RPC message: ', (json) => {
           try {
             const message = JSON.parse(json);
