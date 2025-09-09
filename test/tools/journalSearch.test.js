@@ -94,8 +94,8 @@ describe('Journal Search Tool', function() {
     let apiClient;
     
     before(function() {
-      if (!process.env.VM_API_TOKEN) {
-        throw new Error('VM_API_TOKEN environment variable is required for integration tests');
+      if (!process.env.VM_MCP_TOKEN) {
+        throw new Error('VM_MCP_TOKEN environment variable is required for integration tests');
       }
       if (!process.env.VM_API_BASE_URL) {
         throw new Error('VM_API_BASE_URL environment variable is required for integration tests');

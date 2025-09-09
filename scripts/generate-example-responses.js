@@ -14,8 +14,8 @@ dotenv.config({ path: path.join(projectRoot, '.env.local') });
 dotenv.config({ path: path.join(projectRoot, '.env.secrets.local') });
 
 // Check for required token
-if (!process.env.VM_API_TOKEN) {
-  console.error('ERROR: VM_API_TOKEN not found in environment variables.');
+if (!process.env.VM_MCP_TOKEN) {
+  console.error('ERROR: VM_MCP_TOKEN not found in environment variables.');
   console.error('Please create .env.secrets.local with your JWT token.');
   process.exit(1);
 }

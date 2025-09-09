@@ -23,9 +23,9 @@ const rl = readline.createInterface({
 console.log('Starting MCP server for manual testing...\n');
 
 // Check for required token
-if (!process.env.VM_API_TOKEN) {
-  console.error('ERROR: VM_API_TOKEN not found in environment variables.');
-  console.error('Please create .env.secrets.local with your JWT token.');
+if (!process.env.VM_MCP_TOKEN) {
+  console.error('ERROR: VM_MCP_TOKEN not found in environment variables.');
+  console.error('Please create .env.secrets.local with your MCP token.');
   console.error('See README.md for instructions on getting a token.');
   process.exit(1);
 }

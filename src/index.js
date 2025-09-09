@@ -32,11 +32,11 @@ const toolRegistry = new ToolRegistry(sessionManager, tokenValidator);
 
 // Validate token on startup
 async function validateEnvironment() {
-  const token = process.env.VM_API_TOKEN;
+  const token = process.env.VM_MCP_TOKEN;
   if (!token) {
-    logger.error('VM_API_TOKEN environment variable is required');
-    process.stderr.write('ERROR: VM_API_TOKEN environment variable is required\n');
-    process.stderr.write('Please set your JWT token from Village Metrics and try again.\n');
+    logger.error('VM_MCP_TOKEN environment variable is required');
+    process.stderr.write('ERROR: VM_MCP_TOKEN environment variable is required\n');
+    process.stderr.write('Please set your MCP token from Village Metrics and try again.\n');
     process.exit(1);
   }
 
@@ -51,7 +51,7 @@ async function validateEnvironment() {
   } catch (error) {
     logger.error('Token validation failed', { error: error.message });
     process.stderr.write(`ERROR: Invalid token - ${error.message}\n`);
-    process.stderr.write('Please check your VM_API_TOKEN and try again.\n');
+    process.stderr.write('Please check your VM_MCP_TOKEN and try again.\n');
     process.exit(1);
   }
 }

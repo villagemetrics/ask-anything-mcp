@@ -308,7 +308,7 @@ async function handleToolCall(toolName, args) {
 ```bash
 # Required
 VM_API_BASE_URL=https://api-dev.villagemetrics.com  # Full URL (api-dev for dev, api for prod)
-VM_API_TOKEN=<user_jwt_token>  # User's JWT from login (NOT admin token)
+VM_MCP_TOKEN=<user_mcp_token>  # User's MCP token from Village Metrics app
 
 # Optional
 VM_LOG_LEVEL=info  # Bunyan log levels: trace, debug, info, warn, error, fatal
@@ -317,16 +317,17 @@ VM_MAX_RESULTS=10
 ```
 
 ### 8.2 Getting a User Token
-For testing, you need a real user JWT token from Village Metrics:
+For testing, you need a real MCP token from Village Metrics:
 
-1. **Current method** (manual):
-   - Log into the dev environment app
+1. **MCP Token method** (current):
+   - Log into the Village Metrics app
+   - Go to Settings → Connect AI Tools
+   - Generate MCP token (format: vm_mcp_xxxx_xxxx_xxxx_xxxx)
+   - Export as `VM_MCP_TOKEN`
+
+2. **Legacy method** (deprecated):
    - Use browser dev tools to capture JWT from API calls
-   - Export as `VM_API_TOKEN`
-
-2. **Future method** (streamlined):
-   - App provides "Generate MCP Token" button
-   - Returns long-lived token for desktop use
+   - Not recommended - use MCP tokens for AI tool integration
 
 ### 8.2 Claude Desktop Configuration
 ```json
@@ -336,7 +337,7 @@ For testing, you need a real user JWT token from Village Metrics:
       "command": "npx",
       "args": ["@villagemetrics/ask-anything-mcp"],
       "env": {
-        "VM_API_TOKEN": "<token_from_app>"
+        "VM_MCP_TOKEN": "<token_from_app>"
       }
     }
   }

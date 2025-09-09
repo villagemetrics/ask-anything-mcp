@@ -9,26 +9,24 @@ npm install
 
 ## Testing Locally
 
-### 1. Get Your Authentication Token
+### 1. Get Your MCP Token
 
-**For testing, you need your regular Village Metrics user JWT token** (the same one you get when logging into the app).
+**For testing, you need a Village Metrics MCP token** (generated specifically for connecting AI tools).
 
 **How to get it**:
-1. Log into AWS Console with your `vmdev` profile
-2. Go to DynamoDB
-3. Find the authentication tokens table
-4. Look up the token associated with your email address
-5. Copy the token value
+1. Log into the Village Metrics app
+2. Go to Settings → Connect AI Tools
+3. Click "Generate Token"
+4. Accept the consent terms
+5. Copy the generated MCP token (starts with `vm_mcp_`)
 
-*Alternative*: Extract from browser dev tools by logging into the VM app and capturing the `Authorization: Bearer <token>` from API requests
-
-**Note**: There's no special "MCP token" yet - we're using your normal user token. The MCP token endpoint mentioned in the design docs is a future enhancement to make this easier.
+**Note**: MCP tokens are separate from regular user JWT tokens and are designed specifically for AI tool integration with limited permissions.
 
 ### 2. Manual Testing (Recommended First)
 
 ```bash
-# Set your regular user JWT token
-export VM_API_TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."  # Your JWT from step 1
+# Set your MCP token
+export VM_MCP_TOKEN="vm_mcp_a1b2_c3d4_e5f6_g7h8"  # Your MCP token from step 1
 export VM_API_BASE_URL="https://api-dev.villagemetrics.com"
 
 # Run the manual test script
@@ -58,7 +56,7 @@ Add to your Claude Desktop config file:
       "command": "node",
       "args": ["/Users/YOUR_USERNAME/devel/vm/ask-anything-mcp/src/index.js"],
       "env": {
-        "VM_API_TOKEN": "your_jwt_token_here",
+        "VM_MCP_TOKEN": "vm_mcp_xxxx_xxxx_xxxx_xxxx",
         "VM_API_BASE_URL": "https://api-dev.villagemetrics.com"
       }
     }
@@ -80,9 +78,9 @@ Start a new conversation and try:
 
 ### Token Issues
 If you see "Invalid token" errors:
-1. **Check token expiration**: User JWTs typically expire after 24 hours
-2. **Get a fresh token**: Log out and back into the app, capture new token
-3. **Verify token format**: Should start with `eyJ` (JWT format)
+1. **Check token expiration**: MCP tokens expire based on your selected period (90 days, 1 year, 2 years)
+2. **Generate a new token**: Go to Settings → Connect AI Tools in the Village Metrics app
+3. **Verify token format**: Should start with `vm_mcp_` (MCP token format)
 4. **Check API URL**: Make sure you're using `api-dev.villagemetrics.com` for dev tokens
 
 ### Connection Issues  
@@ -103,5 +101,5 @@ npm run dev
 Once basic testing works:
 1. Add remaining tools (medications, analysis, etc.)
 2. Test with Claude Desktop
-3. Add proper JWT validation with public key
+3. Enhance MCP token validation and error handling
 4. Publish as public npm package

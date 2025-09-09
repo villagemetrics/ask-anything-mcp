@@ -14,7 +14,7 @@ See [QUICK_START.md](QUICK_START.md) for installation and testing instructions.
 - **Pure API Client**: No dependencies on private packages
 - **Data Transformation**: Reduces API response size by 90%+
 - **Stateful Sessions**: Select child once, use for all tools
-- **Token Authentication**: Uses Village Metrics JWT tokens
+- **Token Authentication**: Uses Village Metrics MCP tokens
 
 ## Available Tools
 
@@ -31,16 +31,16 @@ For detailed technical information, see [docs/design.md](docs/design.md).
 
 ### Environment Setup
 
-Create `.env.secrets.local` (gitignored) with your JWT token:
+Create `.env.secrets.local` (gitignored) with your MCP token:
 
 ```bash
 # .env.secrets.local
-VM_API_TOKEN=your_actual_jwt_token_here
+VM_MCP_TOKEN=vm_mcp_xxxx_xxxx_xxxx_xxxx
 ```
 
-**Getting a JWT Token:**
-- Extract from AWS DynamoDB `user_tokens` table for your email
-- Browser dev tools from VM app login → Network tab → Look for `Authorization: Bearer eyJ...`
+**Getting an MCP Token:**
+- Generate from Village Metrics app: Settings → Connect AI Tools → Generate Token
+- Use the full token starting with `vm_mcp_` format
 
 ### Running Tests
 
