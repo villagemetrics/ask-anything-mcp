@@ -8,9 +8,33 @@ on:
   workflow_dispatch: # Allow manual triggering
 
 jobs:
-  test-and-publish:
+  test:
     runs-on: ubuntu-latest
     if: github.repository == 'villagemetrics/ask-anything-mcp'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+        env:
+          VM_MCP_TOKEN: ${{ secrets.VM_MCP_TOKEN }}
+          VM_API_BASE_URL: "https://api-dev.villagemetrics.com"
+          NODE_ENV: test
+
+  publish:
+    runs-on: ubuntu-latest
+    if: github.repository == 'villagemetrics/ask-anything-mcp' && github.ref == 'refs/heads/main'
+    needs: test
     
     steps:
       - name: Checkout repository
@@ -24,13 +48,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Run tests
-        run: npm test
-        env:
-          VM_MCP_TOKEN: ${{ secrets.VM_MCP_TOKEN }}
-          VM_API_BASE_URL: "https://api-dev.villagemetrics.com"
-          NODE_ENV: test
 
       - name: Check if version already published
         id: check_version
@@ -51,13 +68,13 @@ jobs:
           echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
       - name: Publish to NPM
-        if: steps.check_version.outputs.should_publish == 'true' && github.ref == 'refs/heads/main'
+        if: steps.check_version.outputs.should_publish == 'true'
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
-        if: steps.check_version.outputs.should_publish == 'true' && startsWith(github.ref, 'refs/tags/') && github.ref == 'refs/heads/main'
+        if: steps.check_version.outputs.should_publish == 'true' && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
@@ -66,7 +83,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify success
-        if: steps.check_version.outputs.should_publish == 'true' && github.ref == 'refs/heads/main'
+        if: steps.check_version.outputs.should_publish == 'true'
         run: |
           echo "✅ Successfully published ${{ steps.check_version.outputs.package_name }}@${{ steps.check_version.outputs.package_version }} to NPM"
           

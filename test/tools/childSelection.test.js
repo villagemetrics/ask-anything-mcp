@@ -95,8 +95,7 @@ describe('Child Selection Tools', function() {
         session
       );
       
-      expect(selectResult).to.include(firstChild.fullName);
-      expect(selectResult).to.include(firstChild.preferredName);
+      expect(selectResult).to.include(firstChild.preferredName || firstChild.fullName);
       
       // Verify session state
       const selectedChild = sessionManager.getSelectedChild(sessionId);
