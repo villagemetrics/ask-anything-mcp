@@ -1,9 +1,13 @@
 {
   "name": "@villagemetrics/ask-anything-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Model Context Protocol server for Village Metrics behavioral tracking data access",
   "type": "module",
-  "main": "src/index.js",
+  "main": "src/lib/index.js",
+  "exports": {
+    ".": "./src/lib/index.js",
+    "./server": "./src/index.js"
+  },
   "bin": {
     "ask-anything-mcp": "./src/index.js"
   },
