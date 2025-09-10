@@ -55,18 +55,18 @@ export class SelectChildTool {
     });
 
     if (!child) {
-      const availableNames = children.map(c => c.preferredName || c.fullName).join(', ');
-      throw new Error(`Child "${childName}" not found. Available children: ${availableNames}`);
+      const availableCount = children.length;
+      throw new Error(`Child "${childName}" not found. You have access to ${availableCount} children. Use "list_children" to see available options.`);
     }
 
     // Set selected child in session state - use full name for consistency
     this.sessionManager.setSelectedChild(session.sessionId, child.childId, child.fullName);
     
     logger.info('Child selected', { 
-      childId: child.childId, 
-      childName: child.fullName 
+      childId: child.childId,
+      // childName redacted for PHI compliance
     });
 
-    return `Selected child: ${child.fullName} (${child.preferredName}). You can now ask questions about this child's behavior, journal entries, medications, and more.`;
+    return `Selected child: ${child.preferredName || child.fullName}. You can now ask questions about this child's behavior, journal entries, medications, and more.`;
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@villagemetrics/ask-anything-mcp",
   "version": "0.1.0",
-  "description": "MCP server for Village Metrics behavioral data access",
+  "description": "Model Context Protocol server for Village Metrics behavioral tracking data access",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -26,9 +26,8 @@
     "mocha": "^10.8.0"
   },
   "keywords": [
-    "mcp",
-    "ai",
-    "village-metrics"
+    "village metrics mcp",
+    "villagemetrics mcp"
   ],
   "author": "Doug Kerwin",
   "license": "MIT",

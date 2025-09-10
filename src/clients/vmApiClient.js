@@ -69,7 +69,10 @@ export class VMApiClient {
   async getChildren() {
     try {
       const response = await this.client.get('/v1/children/me/all');
-      logger.debug('Raw API response for children', { data: response.data });
+      logger.debug('Children API response received', { 
+        parentChildrenCount: response.data.parentChildren?.length || 0,
+        caregiverChildrenCount: response.data.caregiverChildren?.length || 0
+      });
       
       // Combine parent and caregiver children into a single array
       const allChildren = [];
@@ -101,7 +104,7 @@ export class VMApiClient {
   async getBehaviorData(childId, date) {
     try {
       const response = await this.client.get(`/v1/children/${childId}/track-data/${date}`);
-      logger.debug('Raw API response for behavior data', { 
+      logger.debug('Behavior data API response received', { 
         date,
         hasData: !!response.data,
         scoreCount: response.data?.goals?.length || 0
@@ -122,7 +125,7 @@ export class VMApiClient {
         limit: options.limit || 10,
         offset: options.offset || 0
       });
-      logger.debug('Raw API response for journal search', { 
+      logger.debug('Journal search API response received', { 
         query,
         resultCount: response.data?.results?.length || 0,
         hasMore: response.data?.hasMore || false
@@ -136,7 +139,7 @@ export class VMApiClient {
   async getDateRangeMetadata(childId) {
     try {
       const response = await this.client.get(`/v1/children/${childId}/analysis/date-range-metadata`);
-      logger.debug('Raw API response for date range metadata', { 
+      logger.debug('Date range metadata API response received', { 
         hasData: !!response.data,
         dataAgeInDays: response.data?.daysBehindToday
       });
@@ -152,7 +155,7 @@ export class VMApiClient {
       const url = `/v1/children/${childId}/journal/entries/${journalEntryId}`;
       
       const response = await this.client.get(url);
-      logger.debug('Raw API response for journal entry', { 
+      logger.debug('Journal entry API response received', { 
         journalEntryId,
         hasResults: !!response.data?.results,
         hashtagCount: response.data?.results?.hashtags?.length || 0
@@ -171,7 +174,7 @@ export class VMApiClient {
       // Fix: Use plural form 'medications' not singular 'medication'
       const analysisTypeFixed = analysisType === 'medication' ? 'medications' : analysisType;
       const response = await this.client.get(`/v1/children/${childId}/analysis/${timeRange}/users/village/${analysisTypeFixed}`);
-      logger.debug('Raw API response for analysis data', { 
+      logger.debug('Analysis data API response received', { 
         childId,
         timeRange,
         analysisType: analysisTypeFixed,
@@ -190,7 +193,7 @@ export class VMApiClient {
   async getBehaviorGoals(childId) {
     try {
       const response = await this.client.get(`/v1/children/${childId}/goals`);
-      logger.debug('Raw API response for behavior goals', { 
+      logger.debug('Behavior goals API response received', { 
         childId,
         goalCount: response.data?.length || 0
       });
@@ -206,7 +209,7 @@ export class VMApiClient {
   async getMedications(childId) {
     try {
       const response = await this.client.get(`/v1/children/${childId}/medications`);
-      logger.debug('Raw API response for medications', { 
+      logger.debug('Medications API response received', { 
         childId,
         hasData: !!response.data,
         medicationCount: Array.isArray(response.data) ? response.data.length : 0,

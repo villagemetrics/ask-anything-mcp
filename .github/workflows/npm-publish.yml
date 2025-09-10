@@ -1,0 +1,76 @@
+name: Test and Publish
+
+on:
+  push:
+    branches: [main, develop]
+    tags:
+      - 'v*'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  test-and-publish:
+    runs-on: ubuntu-latest
+    if: github.repository == 'villagemetrics/ask-anything-mcp'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+        env:
+          VM_MCP_TOKEN: ${{ secrets.VM_MCP_TOKEN }}
+          VM_API_BASE_URL: "https://api-dev.villagemetrics.com"
+          NODE_ENV: test
+
+      - name: Check if version already published
+        id: check_version
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          
+          # Check if this version exists on npm
+          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
+            echo "Version $PACKAGE_VERSION already exists on npm"
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "Version $PACKAGE_VERSION not found on npm, will publish"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Publish to NPM
+        if: steps.check_version.outputs.should_publish == 'true' && github.ref == 'refs/heads/main'
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        if: steps.check_version.outputs.should_publish == 'true' && startsWith(github.ref, 'refs/tags/') && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify success
+        if: steps.check_version.outputs.should_publish == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          echo "✅ Successfully published ${{ steps.check_version.outputs.package_name }}@${{ steps.check_version.outputs.package_version }} to NPM"
+          
+      - name: Notify skip
+        if: steps.check_version.outputs.should_publish == 'false'
+        run: |
+          echo "⚠️ Version ${{ steps.check_version.outputs.package_version }} already exists on NPM, skipping publish"

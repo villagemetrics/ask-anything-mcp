@@ -41,7 +41,7 @@ export class TokenValidator {
         logger.debug('MCP token validated successfully');
         return {
           userId: response.data.userId,
-          email: response.data.email,
+          email: response.data.email, // Note: email not logged, only returned for internal use
           permissions: ['read'], // MCP tokens are read-only
           hasWritePermission: false
         };

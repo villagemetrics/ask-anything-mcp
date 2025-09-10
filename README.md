@@ -22,8 +22,7 @@ See [QUICK_START.md](QUICK_START.md) for installation and testing instructions.
 - **Behavior Data**: Get behavior scores and date range metadata  
 - **Journal Search**: Semantic search of journal entries with 97% data reduction
 - **Journal Details**: Get full journal entries with core or detailed analysis
-- **Math Tools**: Calculations to avoid LLM arithmetic (coming soon)
-- **More tools**: Medications, analysis data (coming soon)
+- **Analysis Tools**: Pre-computed behavioral insights and data analysis
 
 For detailed technical information, see [docs/design.md](docs/design.md).
 

@@ -43,7 +43,15 @@ export class SessionManager {
       lastActivity: new Date().toISOString()
     });
     
-    logger.debug('Session updated', { sessionId, updates });
+    // Log session update but exclude PHI from updates object
+    const safeUpdates = { ...updates };
+    if (safeUpdates.selectedChildName) {
+      safeUpdates.selectedChildName = '[CHILD_NAME_REDACTED]';
+    }
+    if (safeUpdates.childrenCache) {
+      safeUpdates.childrenCache = `[${safeUpdates.childrenCache.length} children cached]`;
+    }
+    logger.debug('Session updated', { sessionId, updates: safeUpdates });
     return session;
   }
 
