@@ -27,11 +27,20 @@
   },
   "keywords": [
     "village metrics mcp",
-    "villagemetrics mcp"
+    "villagemetrics mcp",
+    "behavioral tracking mcp",
+    "autism care mcp", 
+    "behavioral data mcp",
+    "care coordination mcp",
+    "medication tracking mcp"
   ],
   "author": "Doug Kerwin",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   }
 }
