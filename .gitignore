@@ -1,0 +1,12 @@
+node_modules/
+*.log
+.env.secrets.local
+.env.secrets*
+.DS_Store
+test-results/
+coverage/
+dist/
+*.tgz
+
+# Example responses contain sensitive data and are manually copied to product repo
+examples/ask-anything-mcp-tool-examples.md
