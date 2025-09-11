@@ -27,7 +27,9 @@ npm install
 ```bash
 # Set your MCP token
 export VM_MCP_TOKEN="vm_mcp_a1b2_c3d4_e5f6_g7h8"  # Your MCP token from step 1
-export VM_API_BASE_URL="https://api-dev.villagemetrics.com"
+
+# Optional: Set API URL (defaults to production)
+export VM_API_BASE_URL="https://api-dev.villagemetrics.com"  # Only if testing against dev API
 
 # Run the manual test script
 npm run test:manual
@@ -57,7 +59,7 @@ Add to your Claude Desktop config file:
       "args": ["/Users/YOUR_USERNAME/devel/vm/ask-anything-mcp/src/index.js"],
       "env": {
         "VM_MCP_TOKEN": "vm_mcp_xxxx_xxxx_xxxx_xxxx",
-        "VM_API_BASE_URL": "https://api-dev.villagemetrics.com"
+        "VM_API_BASE_URL": "https://api.villagemetrics.com"
       }
     }
   }
@@ -81,7 +83,7 @@ If you see "Invalid token" errors:
 1. **Check token expiration**: MCP tokens expire based on your selected period (90 days, 1 year, 2 years)
 2. **Generate a new token**: Go to Settings → Connect AI Tools in the Village Metrics app
 3. **Verify token format**: Should start with `vm_mcp_` (MCP token format)
-4. **Check API URL**: Make sure you're using `api-dev.villagemetrics.com` for dev tokens
+4. **Check API URL**: Defaults to production API. For dev testing, add `VM_API_BASE_URL=https://api-dev.villagemetrics.com` to your environment
 
 ### Connection Issues  
 If Claude can't connect to MCP:

@@ -2,6 +2,11 @@ import { createLogger } from '../utils/logger.js';
 import { ToolRegistry } from '../tools/registry.js';
 import { SessionManager } from '../session/sessionManager.js';
 import { TokenValidator } from '../auth/tokenValidator.js';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const logger = createLogger('MCPCore');
 
@@ -16,23 +21,33 @@ export class MCPCore {
       loggerName: 'MCPCore',
       enableTokenValidation: true,
       bypassApiValidation: false, // Allow bypassing API token requirements for internal usage
+      schemaOnly: false, // Only provide tool schemas without initializing tool instances
       ...options
     };
     
-    this.tokenValidator = new TokenValidator();
-    this.sessionManager = new SessionManager();
-    
-    // For internal usage, ensure VM_MCP_TOKEN is available
-    // The token should come from environment (e.g., .env.secrets.local)
-    if (this.options.bypassApiValidation && !process.env.VM_MCP_TOKEN) {
-      logger.warn('VM_MCP_TOKEN not found in environment. API calls will fail with 401.');
-    }
-    
-    this.toolRegistry = new ToolRegistry(this.sessionManager, this.tokenValidator);
     this.sessionId = null;
     this.userContext = null;
     
-    logger.info('MCP Core initialized', this.options);
+    if (this.options.schemaOnly) {
+      // Schema-only mode: just provide tool definitions without VM API client dependencies
+      this.toolRegistry = null; // No tool instances
+      this.tokenValidator = null;
+      this.sessionManager = null;
+      logger.info('MCP Core initialized in schema-only mode (no token required)', this.options);
+    } else {
+      // Full mode: initialize everything
+      this.tokenValidator = new TokenValidator();
+      this.sessionManager = new SessionManager();
+      
+      // For internal usage, ensure VM_MCP_TOKEN is available
+      // The token should come from environment (e.g., .env.secrets.local)
+      if (this.options.bypassApiValidation && !process.env.VM_MCP_TOKEN) {
+        logger.warn('VM_MCP_TOKEN not found in environment. API calls will fail with 401.');
+      }
+      
+      this.toolRegistry = new ToolRegistry(this.sessionManager, this.tokenValidator);
+      logger.info('MCP Core initialized in full mode', this.options);
+    }
   }
 
   /**
@@ -84,10 +99,73 @@ export class MCPCore {
 
   /**
    * Get available tool definitions
-   * @returns {Array} Array of tool definitions
+   * @returns {Promise<Array>|Array} Array of tool definitions (Promise in schema-only mode)
    */
   getAvailableTools() {
+    if (this.options.schemaOnly) {
+      // Return promise for static tool definitions without initializing tool instances
+      return this.getStaticToolDefinitions();
+    }
     return this.toolRegistry.getToolDefinitions();
+  }
+
+  /**
+   * Get static tool definitions for schema-only mode
+   * Auto-discover all tool classes in the tools directory
+   * @returns {Promise<Array>} Array of static tool definitions
+   */
+  async getStaticToolDefinitions() {
+    const toolsDir = path.join(__dirname, '../tools');
+    const toolDefinitions = [];
+    
+    // Recursively find all .js files in the tools directory
+    const findToolFiles = (dir) => {
+      const files = [];
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          files.push(...findToolFiles(fullPath));
+        } else if (entry.isFile() && entry.name.endsWith('.js') && entry.name !== 'registry.js') {
+          files.push(fullPath);
+        }
+      }
+      
+      return files;
+    };
+    
+    const toolFiles = findToolFiles(toolsDir);
+    
+    // Dynamically import each tool file and extract its definition
+    for (const toolFile of toolFiles) {
+      try {
+        const relativePath = path.relative(__dirname, toolFile);
+        const importPath = './' + relativePath.replace(/\\/g, '/'); // Normalize path separators
+        
+        const module = await import(importPath);
+        
+        // Find the tool class (look for exports that have a definition property)
+        for (const exportName of Object.keys(module)) {
+          const exportedClass = module[exportName];
+          if (exportedClass && exportedClass.definition) {
+            const definition = exportedClass.definition;
+            toolDefinitions.push({
+              name: definition.name,
+              description: definition.description,
+              inputSchema: definition.inputSchema
+            });
+            break; // Only take the first tool class per file
+          }
+        }
+      } catch (error) {
+        // Log warning but don't fail - some files might not be tool classes
+        logger.warn(`Failed to import tool from ${toolFile}`, { error: error.message });
+      }
+    }
+    
+    logger.info(`Auto-discovered ${toolDefinitions.length} tool definitions`);
+    return toolDefinitions;
   }
 
   /**
@@ -97,6 +175,10 @@ export class MCPCore {
    * @returns {Promise<any>} Tool execution result
    */
   async executeTool(toolName, args = {}) {
+    if (this.options.schemaOnly) {
+      throw new Error(`Cannot execute tools in schema-only mode. Tool '${toolName}' requires full MCP Core initialization.`);
+    }
+
     if (!this.sessionId) {
       throw new Error('MCP Core not initialized. Call initializeWithToken() or initializeWithUserContext() first.');
     }
@@ -123,6 +205,10 @@ export class MCPCore {
    * @returns {Promise<Array>} Array of results
    */
   async executeTools(toolCalls) {
+    if (this.options.schemaOnly) {
+      throw new Error('Cannot execute tools in schema-only mode. Tools require full MCP Core initialization.');
+    }
+
     if (!Array.isArray(toolCalls)) {
       throw new Error('toolCalls must be an array');
     }

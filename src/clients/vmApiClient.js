@@ -5,7 +5,7 @@ const logger = createLogger('VMApiClient');
 
 export class VMApiClient {
   constructor() {
-    this.baseUrl = process.env.VM_API_BASE_URL || 'https://api-dev.villagemetrics.com';
+    this.baseUrl = process.env.VM_API_BASE_URL || 'https://api.villagemetrics.com';
     this.token = process.env.VM_MCP_TOKEN;
     
     if (!this.token) {

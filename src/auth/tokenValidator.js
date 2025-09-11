@@ -5,7 +5,7 @@ const logger = createLogger('TokenValidator');
 
 export class TokenValidator {
   constructor() {
-    this.apiBaseUrl = process.env.VM_API_BASE_URL || 'https://api-dev.villagemetrics.com';
+    this.apiBaseUrl = process.env.VM_API_BASE_URL || 'https://api.villagemetrics.com';
   }
 
   async validateToken(token) {
