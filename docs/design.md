@@ -335,7 +335,7 @@ For testing, you need a real MCP token from Village Metrics:
   "mcpServers": {
     "ask-anything": {
       "command": "npx",
-      "args": ["@villagemetrics/ask-anything-mcp"],
+      "args": ["@villagemetrics-public/ask-anything-mcp"],
       "env": {
         "VM_MCP_TOKEN": "<token_from_app>"
       }
@@ -380,7 +380,7 @@ describe('MCP Server', () => {
 ### 10.1 NPM Package
 ```json
 {
-  "name": "@villagemetrics/ask-anything-mcp",
+  "name": "@villagemetrics-public/ask-anything-mcp",
   "version": "1.0.0",
   "bin": {
     "ask-anything-mcp": "./src/index.js"
@@ -397,10 +397,10 @@ describe('MCP Server', () => {
 ### 10.2 Usage Instructions
 ```bash
 # Install globally
-npm install -g @villagemetrics/ask-anything-mcp
+npm install -g @villagemetrics-public/ask-anything-mcp
 
 # Or use directly with npx
-npx @villagemetrics/ask-anything-mcp
+npx @villagemetrics-public/ask-anything-mcp
 ```
 
 ## 11. Security Considerations

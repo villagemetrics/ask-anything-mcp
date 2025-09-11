@@ -22,10 +22,10 @@ export class MCPCore {
     this.tokenValidator = new TokenValidator();
     this.sessionManager = new SessionManager();
     
-    // For internal usage, we can bypass API validation
-    if (this.options.bypassApiValidation) {
-      // Set a dummy token to bypass VMApiClient validation
-      process.env.VM_MCP_TOKEN = process.env.VM_MCP_TOKEN || 'internal-bypass-token';
+    // For internal usage, ensure VM_MCP_TOKEN is available
+    // The token should come from environment (e.g., .env.secrets.local)
+    if (this.options.bypassApiValidation && !process.env.VM_MCP_TOKEN) {
+      logger.warn('VM_MCP_TOKEN not found in environment. API calls will fail with 401.');
     }
     
     this.toolRegistry = new ToolRegistry(this.sessionManager, this.tokenValidator);
