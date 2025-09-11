@@ -306,8 +306,8 @@ async function handleToolCall(toolName, args) {
 
 ### 8.1 Environment Variables
 ```bash
-# Required
-VM_API_BASE_URL=https://api-dev.villagemetrics.com  # Full URL (api-dev for dev, api for prod)
+# Optional - defaults to production
+VM_API_BASE_URL=https://api.villagemetrics.com  # Full URL (defaults to production, use api-dev.villagemetrics.com for dev)
 VM_MCP_TOKEN=<user_mcp_token>  # User's MCP token from Village Metrics app
 
 # Optional

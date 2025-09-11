@@ -108,6 +108,26 @@ async function main() {
 
 main().catch((error) => {
   logger.error('Failed to start MCP server', { error: error.message, stack: error.stack });
-  process.stderr.write(`FATAL ERROR: Failed to start MCP server - ${error.message}\n`);
+  
+  process.stderr.write(`\nFATAL ERROR: MCP Server crashed during startup\n`);
+  process.stderr.write(`Reason: ${error.message}\n`);
+  
+  if (error.message.includes('ECONNREFUSED') || error.message.includes('fetch')) {
+    process.stderr.write(`\nThis appears to be a network/API connection issue.\n`);
+    process.stderr.write(`Please check:\n`);
+    process.stderr.write(`1. VM_API_BASE_URL is set correctly: ${process.env.VM_API_BASE_URL}\n`);
+    process.stderr.write(`2. You have internet connectivity\n`);
+    process.stderr.write(`3. The Village Metrics API is accessible\n\n`);
+  } else if (error.message.includes('node') || error.message.includes('binary')) {
+    process.stderr.write(`\nThis appears to be a Node.js compatibility issue.\n`);
+    process.stderr.write(`Please check:\n`);
+    process.stderr.write(`1. You're using Node.js 18 or later\n`);
+    process.stderr.write(`2. Your Node.js installation is compatible with your system architecture\n`);
+    process.stderr.write(`3. Try running: npx @villagemetrics-public/ask-anything-mcp directly in terminal\n\n`);
+  }
+  
+  process.stderr.write(`Full error details:\n${error.stack}\n\n`);
+  process.stderr.write(`For more help, visit: https://github.com/villagemetrics/ask-anything-mcp/issues\n`);
+  
   process.exit(1);
 });
