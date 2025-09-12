@@ -13,9 +13,12 @@ describe('Overview Analysis Tool', function() {
 
   beforeEach(function() {
     sessionManager = new SessionManager();
-    overviewAnalysisTool = new GetOverviewAnalysisTool(sessionManager);
-    listChildrenTool = new ListChildrenTool(sessionManager);
-    selectChildTool = new SelectChildTool(sessionManager);
+    
+    // API configuration for tests - will use default token behavior (MCP token preferred)
+    const apiOptions = {};
+    overviewAnalysisTool = new GetOverviewAnalysisTool(sessionManager, apiOptions);
+    listChildrenTool = new ListChildrenTool(sessionManager, apiOptions);
+    selectChildTool = new SelectChildTool(sessionManager, apiOptions);
     
     // Create a test session
     testSessionId = sessionManager.createSession('test-user');

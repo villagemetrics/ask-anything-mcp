@@ -25,16 +25,20 @@ describe('Analysis Tools', function() {
 
   beforeEach(function() {
     sessionManager = new SessionManager();
-    listChildrenTool = new ListChildrenTool(sessionManager);
-    selectChildTool = new SelectChildTool(sessionManager);
+    
+    // API configuration for tests - will use default token behavior (MCP token preferred)
+    const apiOptions = {};
+    
+    listChildrenTool = new ListChildrenTool(sessionManager, apiOptions);
+    selectChildTool = new SelectChildTool(sessionManager, apiOptions);
     
     // Initialize all analysis tools
-    overviewAnalysisTool = new GetOverviewAnalysisTool(sessionManager);
-    behaviorAnalysisTool = new GetBehaviorAnalysisTool(sessionManager);
-    medicationAnalysisTool = new GetMedicationAnalysisTool(sessionManager);
-    medicationDetailedAnalysisTool = new GetMedicationDetailedAnalysisTool(sessionManager);
-    journalAnalysisTool = new GetJournalAnalysisTool(sessionManager);
-    hashtagAnalysisTool = new GetHashtagAnalysisTool(sessionManager);
+    overviewAnalysisTool = new GetOverviewAnalysisTool(sessionManager, apiOptions);
+    behaviorAnalysisTool = new GetBehaviorAnalysisTool(sessionManager, apiOptions);
+    medicationAnalysisTool = new GetMedicationAnalysisTool(sessionManager, apiOptions);
+    medicationDetailedAnalysisTool = new GetMedicationDetailedAnalysisTool(sessionManager, apiOptions);
+    journalAnalysisTool = new GetJournalAnalysisTool(sessionManager, apiOptions);
+    hashtagAnalysisTool = new GetHashtagAnalysisTool(sessionManager, apiOptions);
     
     // Create a test session
     testSessionId = sessionManager.createSession('test-user');

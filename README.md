@@ -9,12 +9,42 @@ Enables AI agents to query behavioral tracking data, journal entries, and analys
 
 See [QUICK_START.md](QUICK_START.md) for installation and testing instructions.
 
+## Usage Modes
+
+### 1. MCP Server Mode
+Run as a Model Context Protocol server for Claude Desktop or other MCP clients.
+
+### 2. Library Mode (Internal Use)
+**Note: Library mode is designed specifically for internal Village Metrics ecosystem integration.** While this package is public on npm, library mode is primarily intended for Village Metrics' own closed-source applications (like ask-anything-engine) to reuse the MCP tool definitions, execution logic, and data transformations while maintaining tight integration with our AI chat experience. External users should use the standard MCP server mode with Claude Desktop or other MCP clients.
+
+Library mode allows our internal services to leverage the same tool schemas and transformations used by the MCP server, ensuring consistency across our AI infrastructure while supporting user authentication tokens directly (rather than MCP tokens).
+
+```javascript
+import { MCPCore } from '@villagemetrics-public/ask-anything-mcp';
+
+// Library mode with user auth token (internal use)
+const mcpCore = new MCPCore({
+  libraryMode: true,
+  tokenType: 'auth',
+  authToken: userAuthToken,    // User's regular auth token
+  userId: 'user-123',
+  childId: 'child-456',
+  childPreferredName: 'Sydney'
+});
+
+// Execute tools directly
+const result = await mcpCore.executeTool('get_medication_analysis', {
+  timeRange: 'last_30_days'
+});
+```
+
 ## Architecture
 
 - **Pure API Client**: No dependencies on private packages
 - **Data Transformation**: Reduces API response size by 90%+
 - **Stateful Sessions**: Select child once, use for all tools
-- **Token Authentication**: Uses Village Metrics MCP tokens
+- **Flexible Authentication**: MCP tokens OR user auth tokens
+- **Multiple Modes**: MCP server, Library, or Schema-only
 
 ## Available Tools
 
@@ -30,11 +60,12 @@ For detailed technical information, see [docs/design.md](docs/design.md).
 
 ### Environment Setup
 
-Create `.env.secrets.local` (gitignored) with your MCP token:
+Create `.env.secrets.local` (gitignored) with authentication tokens:
 
 ```bash
 # .env.secrets.local
-VM_MCP_TOKEN=vm_mcp_xxxx_xxxx_xxxx_xxxx
+VM_MCP_TOKEN=vm_mcp_xxxx_xxxx_xxxx_xxxx    # For MCP server mode
+VM_AUTH_TOKEN=your_user_auth_token_here    # For library mode testing
 ```
 
 **Getting an MCP Token:**

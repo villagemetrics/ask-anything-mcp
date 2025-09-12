@@ -24,8 +24,11 @@ describe('Journal Entry Tools', function() {
 
     apiClient = new VMApiClient();
     sessionManager = new SessionManager();
-    getJournalEntryTool = new GetJournalEntryTool(sessionManager);
-    getJournalDetailsTool = new GetJournalDetailsTool(sessionManager);
+    
+    // API configuration for tests - will use default token behavior (MCP token preferred)
+    const apiOptions = {};
+    getJournalEntryTool = new GetJournalEntryTool(sessionManager, apiOptions);
+    getJournalDetailsTool = new GetJournalDetailsTool(sessionManager, apiOptions);
   });
 
   beforeEach(async function() {

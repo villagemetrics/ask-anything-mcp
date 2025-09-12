@@ -5,9 +5,9 @@ import { transformJournalAnalysis } from '../../transformers/analysisData.js';
 const logger = createLogger('GetJournalAnalysisTool');
 
 export class GetJournalAnalysisTool {
-  constructor(sessionManager) {
+  constructor(sessionManager, apiOptions = {}) {
     this.sessionManager = sessionManager;
-    this.apiClient = new VMApiClient();
+    this.apiClient = new VMApiClient(apiOptions);
   }
 
   static get definition() {

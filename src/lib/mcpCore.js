@@ -22,6 +22,7 @@ export class MCPCore {
       enableTokenValidation: true,
       bypassApiValidation: false, // Allow bypassing API token requirements for internal usage
       schemaOnly: false, // Only provide tool schemas without initializing tool instances
+      libraryMode: false, // Library mode: execution without MCP server overhead
       ...options
     };
     
@@ -34,6 +35,42 @@ export class MCPCore {
       this.tokenValidator = null;
       this.sessionManager = null;
       logger.info('MCP Core initialized in schema-only mode (no token required)', this.options);
+    } else if (this.options.libraryMode) {
+      // Library mode: provide definitions AND execution with direct token passing
+      this.tokenValidator = null; // No MCP token validation needed
+      this.sessionManager = new SessionManager();
+      
+      // Build API client options for tools
+      const apiOptions = {};
+      if (this.options.tokenType === 'auth' || (this.options.authToken && !this.options.tokenType)) {
+        apiOptions.tokenType = 'auth';
+        apiOptions.authToken = this.options.authToken;
+      } else if (this.options.tokenType === 'mcp') {
+        apiOptions.tokenType = 'mcp'; 
+        apiOptions.mcpToken = this.options.mcpToken;
+      }
+      
+      this.toolRegistry = new ToolRegistry(this.sessionManager, null, apiOptions);
+      
+      // Pre-populate session if user context provided
+      if (this.options.userId) {
+        this.userContext = { userId: this.options.userId };
+        this.sessionId = this.sessionManager.createSession(this.options.userId);
+        
+        // Pre-select child if provided
+        if (this.options.childId && this.options.childPreferredName) {
+          this.sessionManager.updateSession(this.sessionId, {
+            selectedChildId: this.options.childId,
+            selectedChildName: this.options.childPreferredName
+          });
+        }
+      }
+      
+      logger.info('MCP Core initialized in library mode', { 
+        tokenType: apiOptions.tokenType,
+        hasUserContext: !!this.userContext,
+        hasChildSelected: !!(this.options.childId && this.options.childPreferredName)
+      });
     } else {
       // Full mode: initialize everything
       this.tokenValidator = new TokenValidator();
@@ -180,7 +217,11 @@ export class MCPCore {
     }
 
     if (!this.sessionId) {
-      throw new Error('MCP Core not initialized. Call initializeWithToken() or initializeWithUserContext() first.');
+      if (this.options.libraryMode) {
+        throw new Error('MCP Core in library mode requires userId to be provided during initialization.');
+      } else {
+        throw new Error('MCP Core not initialized. Call initializeWithToken() or initializeWithUserContext() first.');
+      }
     }
 
     logger.debug('Executing tool', { tool: toolName, args, sessionId: this.sessionId });

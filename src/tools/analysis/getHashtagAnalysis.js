@@ -5,9 +5,9 @@ import { transformHashtagAnalysis } from '../../transformers/analysisData.js';
 const logger = createLogger('GetHashtagAnalysisTool');
 
 export class GetHashtagAnalysisTool {
-  constructor(sessionManager) {
+  constructor(sessionManager, apiOptions = {}) {
     this.sessionManager = sessionManager;
-    this.apiClient = new VMApiClient();
+    this.apiClient = new VMApiClient(apiOptions);
   }
 
   static get definition() {

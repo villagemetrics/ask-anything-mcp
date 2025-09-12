@@ -4,9 +4,9 @@ import { VMApiClient } from '../../clients/vmApiClient.js';
 const logger = createLogger('ListChildrenTool');
 
 export class ListChildrenTool {
-  constructor(sessionManager) {
+  constructor(sessionManager, apiOptions = {}) {
     this.sessionManager = sessionManager;
-    this.apiClient = new VMApiClient();
+    this.apiClient = new VMApiClient(apiOptions);
   }
 
   static get definition() {
