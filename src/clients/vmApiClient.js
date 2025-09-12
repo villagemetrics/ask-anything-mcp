@@ -84,7 +84,9 @@ export class VMApiClient {
 
     logger.info('API client initialized', { 
       baseUrl: this.baseUrl, 
-      tokenType: this.tokenType 
+      tokenType: this.tokenType,
+      hasToken: !!this.token,
+      tokenLength: this.token?.length || 0
     });
   }
 

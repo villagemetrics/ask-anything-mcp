@@ -12,11 +12,20 @@ import { TokenValidator } from './auth/tokenValidator.js';
 
 const logger = createLogger('MCPServer');
 
+// Read version from package.json
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJson = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'));
+
 // Initialize server
 const server = new Server(
   {
     name: "ask-anything-mcp",
-    version: "0.1.0",
+    version: packageJson.version,
+    description: "Access VillageMetrics behavioral tracking data for families with children who have behavioral challenges. VillageMetrics transforms daily voice journal entries into behavioral insights through AI analysis. Query journal entries, behavior scores, medication tracking, and analysis to understand patterns and support child development.",
   },
   {
     capabilities: {

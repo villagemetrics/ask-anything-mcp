@@ -13,7 +13,7 @@ export class GetBehaviorAnalysisTool {
   static get definition() {
     return {
       name: 'get_behavior_analysis',
-      description: `Get detailed behavior goals progress analysis including individual goal consistency, achievement patterns, statistical correlations, and goal-specific insights for the selected child. Includes both the configured behavior goals and their performance analysis.
+      description: `Get detailed behavior goals progress analysis including individual goal consistency, achievement patterns, statistical correlations, and goal-specific insights for the selected child. Analyzes behavior scores (1-4 scale) to show performance trends. Includes both the configured behavior goals and their performance analysis.
       
 Best for answering:
 - "Which behavior goals is the child meeting most consistently?"

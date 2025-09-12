@@ -108,15 +108,26 @@ export class ToolRegistry {
     const session = this.sessionManager.getSession(sessionId);
     logger.debug('Executing tool', { tool: name, userId: session.userId, sessionId });
 
+    const startTime = Date.now();
     try {
       const result = await tool.handler(args, session);
-      logger.debug('Tool executed successfully', { tool: name });
-      return result;
+      const duration = Date.now() - startTime;
+      logger.debug('Tool executed successfully', { tool: name, durationMs: duration });
+      
+      // Wrap result with timing information
+      return {
+        result,
+        timing: {
+          duration
+        }
+      };
     } catch (error) {
+      const duration = Date.now() - startTime;
       logger.error('Tool execution failed', { 
         tool: name, 
         error: error.message,
-        stack: error.stack 
+        stack: error.stack,
+        durationMs: duration
       });
       throw error;
     }

@@ -13,7 +13,7 @@ export class GetBehaviorScoresTool {
   static get definition() {
     return {
       name: 'get_behavior_scores',
-      description: 'Get behavior tracking scores for the selected child on a specific date',
+      description: 'Get behavior tracking scores for the selected child on a specific date. Uses 1-4 scale: 4=Completely met goal, 3=Mostly met, 2=Some progress, 1=Not at all, NA=Not applicable. VillageMetrics tracks specific behavior goals and scores them based on journal entries.',
       inputSchema: {
         type: 'object',
         properties: {
