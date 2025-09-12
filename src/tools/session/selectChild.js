@@ -4,9 +4,10 @@ import { VMApiClient } from '../../clients/vmApiClient.js';
 const logger = createLogger('SelectChildTool');
 
 export class SelectChildTool {
-  constructor(sessionManager, apiOptions = {}) {
+  constructor(sessionManager, apiOptions = {}, mcpOptions = {}) {
     this.sessionManager = sessionManager;
     this.apiClient = new VMApiClient(apiOptions);
+    this.mcpOptions = mcpOptions;
   }
 
   static get definition() {
@@ -31,6 +32,11 @@ export class SelectChildTool {
     
     if (!childName) {
       throw new Error('Child name is required');
+    }
+
+    // Check if child switching is disabled (embedded app mode)
+    if (this.mcpOptions.allowChildSwitching === false) {
+      throw new Error('Child switching is not available in this context. Please use the child picker at the top of the app to switch to a different child.');
     }
 
     // Get cached children or fetch

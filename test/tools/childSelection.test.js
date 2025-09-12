@@ -108,4 +108,48 @@ describe('Child Selection Tools', function() {
       expect(selectedChild.childId).to.equal(firstChild.childId);
     });
   });
+
+  describe('Embedded App Mode (Child Switching Disabled)', function() {
+    let sessionManager;
+    let selectChildTool;
+    
+    beforeEach(function() {
+      sessionManager = new SessionManager();
+      // Initialize with child switching disabled (embedded app mode)
+      const apiOptions = {};
+      const mcpOptions = { allowChildSwitching: false };
+      selectChildTool = new SelectChildTool(sessionManager, apiOptions, mcpOptions);
+    });
+
+    it('should prevent child switching when disabled', async function() {
+      const sessionId = sessionManager.createSession('test-user');
+      const session = sessionManager.getSession(sessionId);
+      
+      try {
+        await selectChildTool.execute({ childName: 'Sydney' }, session);
+        throw new Error('Expected selectChild to throw error when switching is disabled');
+      } catch (error) {
+        expect(error.message).to.include('Child switching is not available');
+        expect(error.message).to.include('child picker at the top of the app');
+      }
+    });
+
+    it('should work normally when child switching is enabled', async function() {
+      // Re-create tool with switching enabled
+      const apiOptions = {};
+      const mcpOptions = { allowChildSwitching: true };
+      const enabledSelectTool = new SelectChildTool(sessionManager, apiOptions, mcpOptions);
+      
+      const sessionId = sessionManager.createSession('test-user');
+      const session = sessionManager.getSession(sessionId);
+      
+      // This would normally work with real API, but we expect a different error (no children found)
+      try {
+        await enabledSelectTool.execute({ childName: 'Sydney' }, session);
+      } catch (error) {
+        // Should fail due to no children cached, not due to switching being disabled
+        expect(error.message).to.not.include('Child switching is not available');
+      }
+    });
+  });
 });

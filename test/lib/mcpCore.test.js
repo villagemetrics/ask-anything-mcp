@@ -21,6 +21,32 @@ describe('MCPCore Library', function() {
       expect(mcpCore.userContext).to.be.null;
     });
 
+    it('should initialize with pre-selected child in library mode', function() {
+      const testChildId = 'test-child-123';
+      const userContext = {
+        userId: 'test-user-123',
+        userName: 'Test User'
+      };
+      
+      const mcpCoreWithChild = new MCPCore({
+        libraryMode: true,
+        preSelectedChildId: testChildId,
+        allowChildSwitching: false
+      });
+      
+      expect(mcpCoreWithChild.options.preSelectedChildId).to.equal(testChildId);
+      expect(mcpCoreWithChild.options.allowChildSwitching).to.be.false;
+      
+      const sessionId = mcpCoreWithChild.initializeWithUserContext(userContext);
+      expect(sessionId).to.be.a('string');
+      
+      // Verify child is auto-selected in session
+      const session = mcpCoreWithChild.sessionManager.getSession(sessionId);
+      expect(session.selectedChildId).to.equal(testChildId);
+      
+      mcpCoreWithChild.cleanup();
+    });
+
     it('should initialize with user context for internal usage', function() {
       const userContext = {
         userId: 'test-user-123',
