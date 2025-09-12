@@ -20,29 +20,30 @@ import { GetMedicationDetailedAnalysisTool } from './analysis/getMedicationDetai
 const logger = createLogger('ToolRegistry');
 
 export class ToolRegistry {
-  constructor(sessionManager, tokenValidator) {
+  constructor(sessionManager, tokenValidator, apiOptions = {}) {
     this.sessionManager = sessionManager;
     this.tokenValidator = tokenValidator;
+    this.apiOptions = apiOptions; // Token configuration for VMApiClient
     
-    // Initialize tool instances
+    // Initialize tool instances with API options
     this.toolInstances = {
       // Session tools
-      listChildren: new ListChildrenTool(sessionManager),
-      selectChild: new SelectChildTool(sessionManager),
+      listChildren: new ListChildrenTool(sessionManager, apiOptions),
+      selectChild: new SelectChildTool(sessionManager, apiOptions),
       // Tracking tools
-      getBehaviorScores: new GetBehaviorScoresTool(sessionManager),
-      getDateRangeMetadata: new GetDateRangeMetadataTool(sessionManager),
+      getBehaviorScores: new GetBehaviorScoresTool(sessionManager, apiOptions),
+      getDateRangeMetadata: new GetDateRangeMetadataTool(sessionManager, apiOptions),
       // Journal tools
-      searchJournals: new SearchJournalsTool(sessionManager),
-      getJournalEntry: new GetJournalEntryTool(sessionManager),
-      getJournalDetails: new GetJournalDetailsTool(sessionManager),
+      searchJournals: new SearchJournalsTool(sessionManager, apiOptions),
+      getJournalEntry: new GetJournalEntryTool(sessionManager, apiOptions),
+      getJournalDetails: new GetJournalDetailsTool(sessionManager, apiOptions),
       // Analysis tools
-      getOverviewAnalysis: new GetOverviewAnalysisTool(sessionManager),
-      getBehaviorAnalysis: new GetBehaviorAnalysisTool(sessionManager),
-      getMedicationAnalysis: new GetMedicationAnalysisTool(sessionManager),
-      getMedicationDetailedAnalysis: new GetMedicationDetailedAnalysisTool(sessionManager),
-      getJournalAnalysis: new GetJournalAnalysisTool(sessionManager),
-      getHashtagAnalysis: new GetHashtagAnalysisTool(sessionManager),
+      getOverviewAnalysis: new GetOverviewAnalysisTool(sessionManager, apiOptions),
+      getBehaviorAnalysis: new GetBehaviorAnalysisTool(sessionManager, apiOptions),
+      getMedicationAnalysis: new GetMedicationAnalysisTool(sessionManager, apiOptions),
+      getMedicationDetailedAnalysis: new GetMedicationDetailedAnalysisTool(sessionManager, apiOptions),
+      getJournalAnalysis: new GetJournalAnalysisTool(sessionManager, apiOptions),
+      getHashtagAnalysis: new GetHashtagAnalysisTool(sessionManager, apiOptions),
       // Future tools will be added here:
       // Math tools
     };

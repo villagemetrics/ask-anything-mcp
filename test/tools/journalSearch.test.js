@@ -102,8 +102,11 @@ describe('Journal Search Tool', function() {
       }
       
       sessionManager = new SessionManager();
+    
+    // API configuration for tests - will use default token behavior (MCP token preferred)
+    const apiOptions = {};
       apiClient = new VMApiClient();
-      searchTool = new SearchJournalsTool(sessionManager);
+      searchTool = new SearchJournalsTool(sessionManager, apiOptions);
     });
 
     beforeEach(async function() {

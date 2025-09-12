@@ -5,9 +5,9 @@ import { transformBehaviorData } from '../../transformers/behaviorData.js';
 const logger = createLogger('GetBehaviorScoresTool');
 
 export class GetBehaviorScoresTool {
-  constructor(sessionManager) {
+  constructor(sessionManager, apiOptions = {}) {
     this.sessionManager = sessionManager;
-    this.apiClient = new VMApiClient();
+    this.apiClient = new VMApiClient(apiOptions);
   }
 
   static get definition() {

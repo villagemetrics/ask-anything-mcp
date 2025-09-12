@@ -14,8 +14,11 @@ describe('Child Selection Tools', function() {
     
     beforeEach(function() {
       sessionManager = new SessionManager();
-      listChildrenTool = new ListChildrenTool(sessionManager);
-      selectChildTool = new SelectChildTool(sessionManager);
+    
+    // API configuration for tests - will use default token behavior (MCP token preferred)
+    const apiOptions = {};
+      listChildrenTool = new ListChildrenTool(sessionManager, apiOptions);
+      selectChildTool = new SelectChildTool(sessionManager, apiOptions);
     });
 
     it('should format children list correctly', function() {
@@ -77,11 +80,14 @@ describe('Child Selection Tools', function() {
 
     it('should handle full child selection flow', async function() {
       const sessionManager = new SessionManager();
+    
+    // API configuration for tests - will use default token behavior (MCP token preferred)
+    const apiOptions = {};
       const sessionId = sessionManager.createSession('test-user');
       const session = sessionManager.getSession(sessionId);
       
-      const listTool = new ListChildrenTool(sessionManager);
-      const selectTool = new SelectChildTool(sessionManager);
+      const listTool = new ListChildrenTool(sessionManager, apiOptions);
+      const selectTool = new SelectChildTool(sessionManager, apiOptions);
       
       // List children
       const listResult = await listTool.execute({}, session);

@@ -5,9 +5,9 @@ import { transformDateRangeMetadata } from '../../transformers/dateRangeData.js'
 const logger = createLogger('GetDateRangeMetadataTool');
 
 export class GetDateRangeMetadataTool {
-  constructor(sessionManager) {
+  constructor(sessionManager, apiOptions = {}) {
     this.sessionManager = sessionManager;
-    this.apiClient = new VMApiClient();
+    this.apiClient = new VMApiClient(apiOptions);
   }
 
   static get definition() {

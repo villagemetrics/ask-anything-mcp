@@ -4,12 +4,31 @@ import { createLogger } from '../utils/logger.js';
 const logger = createLogger('VMApiClient');
 
 export class VMApiClient {
-  constructor() {
+  constructor(options = {}) {
     this.baseUrl = process.env.VM_API_BASE_URL || 'https://api.villagemetrics.com';
-    this.token = process.env.VM_MCP_TOKEN;
+    
+    // Explicit token selection with clear precedence
+    if (options.tokenType === 'auth' || options.tokenType === 'user') {
+      this.token = options.authToken || process.env.VM_AUTH_TOKEN;
+      this.tokenType = 'auth';
+    } else if (options.tokenType === 'mcp') {
+      this.token = options.mcpToken || process.env.VM_MCP_TOKEN;  
+      this.tokenType = 'mcp';
+    } else {
+      // Default behavior: MCP token preferred when both available
+      if (process.env.VM_MCP_TOKEN) {
+        this.token = process.env.VM_MCP_TOKEN;
+        this.tokenType = 'mcp';
+      } else if (process.env.VM_AUTH_TOKEN) {
+        this.token = process.env.VM_AUTH_TOKEN;
+        this.tokenType = 'auth';
+      } else {
+        throw new Error('Either VM_MCP_TOKEN or VM_AUTH_TOKEN is required');
+      }
+    }
     
     if (!this.token) {
-      throw new Error('VM_MCP_TOKEN is required');
+      throw new Error(`Token not found for type '${this.tokenType}'. Provide token directly or set appropriate environment variable.`);
     }
 
     // Enforce HTTPS always
@@ -63,7 +82,10 @@ export class VMApiClient {
       }
     );
 
-    logger.info('API client initialized', { baseUrl: this.baseUrl });
+    logger.info('API client initialized', { 
+      baseUrl: this.baseUrl, 
+      tokenType: this.tokenType 
+    });
   }
 
   async getChildren() {

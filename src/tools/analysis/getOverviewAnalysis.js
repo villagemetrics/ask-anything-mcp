@@ -5,9 +5,9 @@ import { transformOverviewAnalysis } from '../../transformers/analysisData.js';
 const logger = createLogger('GetOverviewAnalysisTool');
 
 export class GetOverviewAnalysisTool {
-  constructor(sessionManager) {
+  constructor(sessionManager, apiOptions = {}) {
     this.sessionManager = sessionManager;
-    this.apiClient = new VMApiClient();
+    this.apiClient = new VMApiClient(apiOptions);
   }
 
   static get definition() {
