@@ -20,16 +20,17 @@ import { GetMedicationDetailedAnalysisTool } from './analysis/getMedicationDetai
 const logger = createLogger('ToolRegistry');
 
 export class ToolRegistry {
-  constructor(sessionManager, tokenValidator, apiOptions = {}) {
+  constructor(sessionManager, tokenValidator, apiOptions = {}, mcpOptions = {}) {
     this.sessionManager = sessionManager;
     this.tokenValidator = tokenValidator;
     this.apiOptions = apiOptions; // Token configuration for VMApiClient
+    this.mcpOptions = mcpOptions; // MCP configuration (preSelectedChildId, allowChildSwitching, etc.)
     
     // Initialize tool instances with API options
     this.toolInstances = {
-      // Session tools
+      // Session tools - conditionally include selectChild based on allowChildSwitching
       listChildren: new ListChildrenTool(sessionManager, apiOptions),
-      selectChild: new SelectChildTool(sessionManager, apiOptions),
+      ...(mcpOptions.allowChildSwitching !== false ? { selectChild: new SelectChildTool(sessionManager, apiOptions, mcpOptions) } : {}),
       // Tracking tools
       getBehaviorScores: new GetBehaviorScoresTool(sessionManager, apiOptions),
       getDateRangeMetadata: new GetDateRangeMetadataTool(sessionManager, apiOptions),
@@ -56,7 +57,9 @@ export class ToolRegistry {
   registerTools() {
     // Register session management tools
     this.registerToolClass(ListChildrenTool, this.toolInstances.listChildren);
-    this.registerToolClass(SelectChildTool, this.toolInstances.selectChild);
+    if (this.toolInstances.selectChild) {
+      this.registerToolClass(SelectChildTool, this.toolInstances.selectChild);
+    }
     
     // Register tracking tools
     this.registerToolClass(GetBehaviorScoresTool, this.toolInstances.getBehaviorScores);
@@ -108,15 +111,26 @@ export class ToolRegistry {
     const session = this.sessionManager.getSession(sessionId);
     logger.debug('Executing tool', { tool: name, userId: session.userId, sessionId });
 
+    const startTime = Date.now();
     try {
       const result = await tool.handler(args, session);
-      logger.debug('Tool executed successfully', { tool: name });
-      return result;
+      const duration = Date.now() - startTime;
+      logger.debug('Tool executed successfully', { tool: name, durationMs: duration });
+      
+      // Wrap result with timing information
+      return {
+        result,
+        timing: {
+          duration
+        }
+      };
     } catch (error) {
+      const duration = Date.now() - startTime;
       logger.error('Tool execution failed', { 
         tool: name, 
         error: error.message,
-        stack: error.stack 
+        stack: error.stack,
+        durationMs: duration
       });
       throw error;
     }

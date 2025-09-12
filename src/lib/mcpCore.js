@@ -23,6 +23,8 @@ export class MCPCore {
       bypassApiValidation: false, // Allow bypassing API token requirements for internal usage
       schemaOnly: false, // Only provide tool schemas without initializing tool instances
       libraryMode: false, // Library mode: execution without MCP server overhead
+      preSelectedChildId: null, // Optional: Pre-select a specific child for embedded app usage
+      allowChildSwitching: true, // Allow child switching tools (disabled in embedded app mode)
       ...options
     };
     
@@ -50,7 +52,7 @@ export class MCPCore {
         apiOptions.mcpToken = this.options.mcpToken;
       }
       
-      this.toolRegistry = new ToolRegistry(this.sessionManager, null, apiOptions);
+      this.toolRegistry = new ToolRegistry(this.sessionManager, null, apiOptions, this.options);
       
       // Pre-populate session if user context provided
       if (this.options.userId) {
@@ -82,7 +84,7 @@ export class MCPCore {
         logger.warn('VM_MCP_TOKEN not found in environment. API calls will fail with 401.');
       }
       
-      this.toolRegistry = new ToolRegistry(this.sessionManager, this.tokenValidator);
+      this.toolRegistry = new ToolRegistry(this.sessionManager, this.tokenValidator, {}, this.options);
       logger.info('MCP Core initialized in full mode', this.options);
     }
   }
@@ -101,9 +103,22 @@ export class MCPCore {
       this.userContext = await this.tokenValidator.validateToken(token);
       this.sessionId = this.sessionManager.createSession(this.userContext.userId);
       
+      // Auto-select child if pre-selected child ID is provided
+      if (this.options.preSelectedChildId) {
+        this.sessionManager.updateSession(this.sessionId, {
+          selectedChildId: this.options.preSelectedChildId
+        });
+        logger.info('Auto-selected child for embedded app mode', { 
+          childId: this.options.preSelectedChildId,
+          sessionId: this.sessionId 
+        });
+      }
+      
       logger.info('MCP Core initialized with token', { 
         userId: this.userContext.userId, 
-        sessionId: this.sessionId 
+        sessionId: this.sessionId,
+        hasPreSelectedChild: !!this.options.preSelectedChildId,
+        allowChildSwitching: this.options.allowChildSwitching
       });
       
       return { userContext: this.userContext, sessionId: this.sessionId };
@@ -126,9 +141,22 @@ export class MCPCore {
     this.userContext = userContext;
     this.sessionId = this.sessionManager.createSession(this.userContext.userId);
     
+    // Auto-select child if pre-selected child ID is provided
+    if (this.options.preSelectedChildId) {
+      this.sessionManager.updateSession(this.sessionId, {
+        selectedChildId: this.options.preSelectedChildId
+      });
+      logger.info('Auto-selected child for embedded app mode', { 
+        childId: this.options.preSelectedChildId,
+        sessionId: this.sessionId 
+      });
+    }
+    
     logger.info('MCP Core initialized with user context', { 
       userId: this.userContext.userId, 
-      sessionId: this.sessionId 
+      sessionId: this.sessionId,
+      hasPreSelectedChild: !!this.options.preSelectedChildId,
+      allowChildSwitching: this.options.allowChildSwitching
     });
     
     return this.sessionId;
