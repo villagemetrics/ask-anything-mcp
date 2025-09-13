@@ -9,6 +9,7 @@ import { createLogger } from './utils/logger.js';
 import { ToolRegistry } from './tools/registry.js';
 import { SessionManager } from './session/sessionManager.js';
 import { TokenValidator } from './auth/tokenValidator.js';
+import { AutoUpdater } from './utils/autoUpdater.js';
 
 const logger = createLogger('MCPServer');
 
@@ -37,7 +38,8 @@ const server = new Server(
 // Initialize components
 const tokenValidator = new TokenValidator();
 const sessionManager = new SessionManager();
-const toolRegistry = new ToolRegistry(sessionManager, tokenValidator);
+const autoUpdater = new AutoUpdater();
+const toolRegistry = new ToolRegistry(sessionManager, tokenValidator, {}, {}, autoUpdater);
 
 // Validate token on startup
 async function validateEnvironment() {
@@ -110,6 +112,22 @@ async function main() {
   
   const transport = new StdioServerTransport();
   await server.connect(transport);
+  
+  // Start auto-updater (check on startup and every hour)
+  autoUpdater.startPeriodicChecks(1);
+  
+  // Handle graceful shutdown
+  process.on('SIGTERM', () => {
+    logger.info('Received SIGTERM, shutting down gracefully...');
+    autoUpdater.stopPeriodicChecks();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', () => {
+    logger.info('Received SIGINT, shutting down gracefully...');
+    autoUpdater.stopPeriodicChecks();
+    process.exit(0);
+  });
   
   logger.info('MCP server started and listening on stdio', { userId: userContext.userId });
   process.stderr.write('MCP server ready\n');
