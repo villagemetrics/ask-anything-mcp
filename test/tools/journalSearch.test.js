@@ -83,6 +83,132 @@ describe('Journal Search Tool', function() {
       
       expect(result.results[0].daysAgo).to.be.null;
     });
+
+    it('should include all scoring fields when scores are high', function() {
+      const mockApiResponse = {
+        results: [{
+          document: {
+            journalEntryId: 'test-entry-high-scores',
+            date: '2025-04-07',
+            userName: 'Test User',
+            results: {
+              shortTitle: 'High scoring entry',
+              detailScore: 0.85,
+              keyMomentScore: 0.78,
+              crisisIntensityScore: 0.82,
+              effectiveStrategiesScore: 0.89
+            }
+          },
+          searchMetadata: {
+            rawSnippet: 'Test content with high scores',
+            searchScore: 0.95
+          }
+        }],
+        pagination: { total: 1 }
+      };
+
+      const result = transformJournalSearchResults(mockApiResponse, 'Test Child');
+      const entry = result.results[0];
+      
+      expect(entry.detailLevel).to.equal('High detail (0.85/1.0)');
+      expect(entry.momentSignificance).to.equal('Major key moment (0.78/1.0)');
+      expect(entry.crisisLevel).to.equal('Crisis situation (0.82/1.0)');
+      expect(entry.effectiveStrategies).to.equal('Highly effective strategies (0.89/1.0)');
+    });
+
+    it('should only include detailLevel when conditional scores are below threshold', function() {
+      const mockApiResponse = {
+        results: [{
+          document: {
+            journalEntryId: 'test-entry-low-scores',
+            date: '2025-04-07',
+            userName: 'Test User',
+            results: {
+              shortTitle: 'Low scoring entry',
+              detailScore: 0.45,
+              keyMomentScore: 0.35,
+              crisisIntensityScore: 0.25,
+              effectiveStrategiesScore: 0.40
+            }
+          },
+          searchMetadata: {
+            rawSnippet: 'Test content with low scores',
+            searchScore: 0.65
+          }
+        }],
+        pagination: { total: 1 }
+      };
+
+      const result = transformJournalSearchResults(mockApiResponse, 'Test Child');
+      const entry = result.results[0];
+      
+      expect(entry.detailLevel).to.equal('Moderate detail (0.45/1.0)');
+      expect(entry.momentSignificance).to.be.undefined;
+      expect(entry.crisisLevel).to.be.undefined;
+      expect(entry.effectiveStrategies).to.be.undefined;
+    });
+
+    it('should handle mixed scoring thresholds correctly', function() {
+      const mockApiResponse = {
+        results: [{
+          document: {
+            journalEntryId: 'test-entry-mixed-scores',
+            date: '2025-04-07',
+            userName: 'Test User',
+            results: {
+              shortTitle: 'Mixed scoring entry',
+              detailScore: 0.68,
+              keyMomentScore: 0.65, // Above threshold
+              crisisIntensityScore: 0.45, // Below threshold
+              effectiveStrategiesScore: 0.75 // Above threshold
+            }
+          },
+          searchMetadata: {
+            rawSnippet: 'Test content with mixed scores',
+            searchScore: 0.75
+          }
+        }],
+        pagination: { total: 1 }
+      };
+
+      const result = transformJournalSearchResults(mockApiResponse, 'Test Child');
+      const entry = result.results[0];
+      
+      expect(entry.detailLevel).to.equal('Moderate detail (0.68/1.0)');
+      expect(entry.momentSignificance).to.equal('Notable key moment (0.65/1.0)');
+      expect(entry.crisisLevel).to.be.undefined; // Below 0.55 threshold
+      expect(entry.effectiveStrategies).to.equal('Highly effective strategies (0.75/1.0)');
+    });
+
+    it('should handle missing or null score fields gracefully', function() {
+      const mockApiResponse = {
+        results: [{
+          document: {
+            journalEntryId: 'test-entry-missing-scores',
+            date: '2025-04-07',
+            userName: 'Test User',
+            results: {
+              shortTitle: 'Entry with missing scores',
+              detailScore: null,
+              // Other scores missing entirely
+            }
+          },
+          searchMetadata: {
+            rawSnippet: 'Test content with missing scores',
+            searchScore: 0.65
+          }
+        }],
+        pagination: { total: 1 }
+      };
+
+      const result = transformJournalSearchResults(mockApiResponse, 'Test Child');
+      const entry = result.results[0];
+      
+      expect(entry.detailLevel).to.be.undefined;
+      expect(entry.momentSignificance).to.be.undefined;
+      expect(entry.crisisLevel).to.be.undefined;
+      expect(entry.effectiveStrategies).to.be.undefined;
+    });
   });
   
   // Integration tests (real API - journal search already API-based)
