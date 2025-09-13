@@ -65,20 +65,22 @@ describe('Tool Registry', function() {
   });
 
   describe('Tool Count', function() {
-    it('should have 13 tools when child switching is enabled', function() {
-      const mcpOptions = { allowChildSwitching: true };
-      const registry = new ToolRegistry(sessionManager, null, {}, mcpOptions);
-      const tools = registry.getToolDefinitions();
+    it('should have exactly one more tool when child switching is enabled vs disabled', function() {
+      const registryEnabled = new ToolRegistry(sessionManager, null, {}, { allowChildSwitching: true });
+      const registryDisabled = new ToolRegistry(sessionManager, null, {}, { allowChildSwitching: false });
       
-      expect(tools).to.have.lengthOf(13);
-    });
-
-    it('should have 12 tools when child switching is disabled', function() {
-      const mcpOptions = { allowChildSwitching: false };
-      const registry = new ToolRegistry(sessionManager, null, {}, mcpOptions);
-      const tools = registry.getToolDefinitions();
+      const toolsEnabled = registryEnabled.getToolDefinitions();
+      const toolsDisabled = registryDisabled.getToolDefinitions();
       
-      expect(tools).to.have.lengthOf(12);
+      // The difference should be exactly 1 tool (the select_child tool)
+      expect(toolsEnabled).to.have.lengthOf(toolsDisabled.length + 1);
+      
+      // Verify select_child is the difference
+      const enabledNames = toolsEnabled.map(t => t.name);
+      const disabledNames = toolsDisabled.map(t => t.name);
+      
+      expect(enabledNames).to.include('select_child');
+      expect(disabledNames).to.not.include('select_child');
     });
   });
 });

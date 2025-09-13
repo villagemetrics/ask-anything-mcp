@@ -1,6 +1,6 @@
 {
   "name": "@villagemetrics-public/ask-anything-mcp",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Model Context Protocol server for Village Metrics behavioral tracking data access",
   "type": "module",
   "main": "src/lib/index.js",
@@ -21,19 +21,22 @@
     "@modelcontextprotocol/sdk": "^0.6.0",
     "axios": "^1.7.2",
     "bunyan": "^1.8.15",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "npm-registry-fetch": "^19.0.0",
+    "semver": "^7.7.2"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "chai": "^4.3.10",
     "dotenv": "^17.2.2",
-    "mocha": "^10.8.0"
+    "mocha": "^10.8.0",
+    "sinon": "^21.0.0"
   },
   "keywords": [
     "village metrics mcp",
     "villagemetrics mcp",
     "behavioral tracking mcp",
-    "autism care mcp", 
+    "autism care mcp",
     "behavioral data mcp",
     "care coordination mcp",
     "medication tracking mcp"

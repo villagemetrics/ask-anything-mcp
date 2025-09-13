@@ -16,11 +16,13 @@ import { GetMedicationAnalysisTool } from './analysis/getMedicationAnalysis.js';
 import { GetJournalAnalysisTool } from './analysis/getJournalAnalysis.js';
 import { GetHashtagAnalysisTool } from './analysis/getHashtagAnalysis.js';
 import { GetMedicationDetailedAnalysisTool } from './analysis/getMedicationDetailedAnalysis.js';
+// System tools
+import { GetVersionInfoTool } from './system/getVersionInfo.js';
 
 const logger = createLogger('ToolRegistry');
 
 export class ToolRegistry {
-  constructor(sessionManager, tokenValidator, apiOptions = {}, mcpOptions = {}) {
+  constructor(sessionManager, tokenValidator, apiOptions = {}, mcpOptions = {}, autoUpdater = null) {
     this.sessionManager = sessionManager;
     this.tokenValidator = tokenValidator;
     this.apiOptions = apiOptions; // Token configuration for VMApiClient
@@ -45,6 +47,8 @@ export class ToolRegistry {
       getMedicationDetailedAnalysis: new GetMedicationDetailedAnalysisTool(sessionManager, apiOptions),
       getJournalAnalysis: new GetJournalAnalysisTool(sessionManager, apiOptions),
       getHashtagAnalysis: new GetHashtagAnalysisTool(sessionManager, apiOptions),
+      // System tools
+      getVersionInfo: new GetVersionInfoTool(autoUpdater),
       // Future tools will be added here:
       // Math tools
     };
@@ -77,6 +81,9 @@ export class ToolRegistry {
     this.registerToolClass(GetMedicationDetailedAnalysisTool, this.toolInstances.getMedicationDetailedAnalysis);
     this.registerToolClass(GetJournalAnalysisTool, this.toolInstances.getJournalAnalysis);
     this.registerToolClass(GetHashtagAnalysisTool, this.toolInstances.getHashtagAnalysis);
+    
+    // Register system tools
+    this.registerToolClass(GetVersionInfoTool, this.toolInstances.getVersionInfo);
     
     logger.info('Tools registered', { count: this.tools.size });
   }
