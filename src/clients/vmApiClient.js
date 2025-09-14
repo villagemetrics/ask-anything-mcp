@@ -162,20 +162,29 @@ export class VMApiClient {
 
   async listJournalEntries(childId, options = {}) {
     try {
-      const response = await this.client.get(`/v1/children/${childId}/journal/entries`, {
-        params: {
-          startDate: options.startDate,
-          endDate: options.endDate,
-          sortOrder: options.sortOrder || 'desc'
-        }
-      });
-      logger.debug('Journal entries list API response received', { 
+      // Use the feed endpoint to get journal entries
+      const params = {
+        limit: options.limit || 50,  // Max allowed by feed API
+        offset: options.offset || 0
+      };
+      
+      const response = await this.client.get(`/v1/feed/${childId}`, { params });
+      logger.debug('Journal entries from feed API response received', { 
         childId,
-        startDate: options.startDate,
-        endDate: options.endDate,
-        resultCount: response.data?.results?.length || 0
+        limit: params.limit,
+        offset: params.offset,
+        totalItems: response.data?.items?.length || 0,
+        journalEntries: response.data?.items?.filter(item => item.type === 'journalentry').length || 0
       });
-      return response.data;
+      
+      // Filter to only journal entries and transform to expected format
+      const journalEntries = response.data?.items?.filter(item => item.type === 'journalentry') || [];
+      
+      return {
+        results: journalEntries,
+        hasMore: response.data?.nextOffset !== null,
+        nextOffset: response.data?.nextOffset
+      };
     } catch (error) {
       throw error;
     }
@@ -265,6 +274,36 @@ export class VMApiClient {
     } catch (error) {
       if (error.response?.status === 404) {
         return null;
+      }
+      throw error;
+    }
+  }
+
+  async getVillageMembers(childId, options = {}) {
+    try {
+      const params = {};
+      if (options.includeInvitationDetails !== undefined) {
+        params.includeInvitationDetails = options.includeInvitationDetails;
+      }
+
+      const response = await this.client.get(`/v1/children/${childId}/village`, {
+        params
+      });
+      logger.debug('Village members API response received', { 
+        childId,
+        hasData: !!response.data,
+        memberCount: response.data?.village?.length || 0,
+        activeMembers: response.data?.village?.filter(m => m.inviteStatus === 'accepted').length || 0,
+        pendingMembers: response.data?.village?.filter(m => m.inviteStatus === 'pending').length || 0
+      });
+      
+      // Transform to expected format - API returns { village: [...] } but we expect { members: [...] }
+      return {
+        members: response.data?.village || []
+      };
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return { members: [] };
       }
       throw error;
     }

@@ -1,6 +1,5 @@
 import { createLogger } from '../../utils/logger.js';
 import { VMApiClient } from '../../clients/vmApiClient.js';
-import { transformJournalSearchResults } from '../../transformers/journalData.js';
 
 const logger = createLogger('ListJournalEntriesTool');
 
@@ -29,35 +28,179 @@ export class ListJournalEntriesTool {
   }
 
   /**
-   * Calculate date range from timeRange parameter
+   * Calculate limit based on time range (since feed API doesn't support date filtering)
    * @private
    */
-  _calculateDateRange(timeRange) {
-    const now = new Date();
-    const endDate = now.toISOString().split('T')[0]; // Today in YYYY-MM-DD
-    
-    let daysBack;
+  _calculateLimitForTimeRange(timeRange) {
     switch (timeRange) {
       case 'last_7_days':
-        daysBack = 7;
-        break;
+        return 20; // Usually ~2-3 entries per day
       case 'last_14_days':
-        daysBack = 14;
-        break;
+        return 35;
       case 'last_30_days':
-        daysBack = 30;
-        break;
+        return 50; // Max allowed by feed API
       case 'last_60_days':
-        daysBack = 60;
-        break;
+        return 50; // Max allowed by feed API
       default:
-        daysBack = 30; // Default fallback
+        return 50; // Default
+    }
+  }
+
+  /**
+   * Format score as label with value for display
+   * @private
+   */
+  _formatScoreLabel(label, score) {
+    return `${label} (${score.toFixed(2)}/1.0)`;
+  }
+
+  /**
+   * Get detail level label and formatted string based on score
+   * @private
+   */
+  _getDetailLevel(detailScore) {
+    if (typeof detailScore !== 'number' || detailScore < 0 || detailScore > 1) {
+      return null;
     }
     
-    const startDate = new Date(now.getTime() - (daysBack * 24 * 60 * 60 * 1000));
-    const startDateString = startDate.toISOString().split('T')[0];
+    let label;
+    if (detailScore >= 0.75) {
+      label = 'High detail';
+    } else if (detailScore >= 0.45) {
+      label = 'Moderate detail';
+    } else {
+      label = 'Brief detail';
+    }
     
-    return { startDate: startDateString, endDate };
+    return this._formatScoreLabel(label, detailScore);
+  }
+
+  /**
+   * Get moment significance label and formatted string based on score
+   * Only returns a value if score >= 0.55
+   * @private
+   */
+  _getMomentSignificance(keyMomentScore) {
+    if (typeof keyMomentScore !== 'number' || keyMomentScore < 0.55) {
+      return null;
+    }
+    
+    let label;
+    if (keyMomentScore >= 0.75) {
+      label = 'Major key moment';
+    } else if (keyMomentScore >= 0.65) {
+      label = 'Notable key moment';
+    } else {
+      label = 'Minor key moment';
+    }
+    
+    return this._formatScoreLabel(label, keyMomentScore);
+  }
+
+  /**
+   * Get crisis level label and formatted string based on score
+   * Only returns a value if score >= 0.55
+   * @private
+   */
+  _getCrisisLevel(crisisIntensityScore) {
+    if (typeof crisisIntensityScore !== 'number' || crisisIntensityScore < 0.55) {
+      return null;
+    }
+    
+    let label;
+    if (crisisIntensityScore >= 0.75) {
+      label = 'Crisis situation';
+    } else if (crisisIntensityScore >= 0.65) {
+      label = 'High intensity';
+    } else {
+      label = 'Elevated situation';
+    }
+    
+    return this._formatScoreLabel(label, crisisIntensityScore);
+  }
+
+  /**
+   * Get effective strategies label and formatted string based on score
+   * Only returns a value if score >= 0.55
+   * @private
+   */
+  _getEffectiveStrategies(effectiveStrategiesScore) {
+    if (typeof effectiveStrategiesScore !== 'number' || effectiveStrategiesScore < 0.55) {
+      return null;
+    }
+    
+    let label;
+    if (effectiveStrategiesScore >= 0.75) {
+      label = 'Highly effective strategies';
+    } else if (effectiveStrategiesScore >= 0.65) {
+      label = 'Good strategies';
+    } else {
+      label = 'Helpful strategies';
+    }
+    
+    return this._formatScoreLabel(label, effectiveStrategiesScore);
+  }
+
+  /**
+   * Transform feed entries to list format
+   * @private
+   */
+  transformFeedToList(response, childName) {
+    if (!response || !response.results) {
+      return {
+        childName,
+        totalResults: 0,
+        results: [],
+        message: 'No journal entries found'
+      };
+    }
+
+    const transformedResults = response.results.map(item => {
+      const result = {
+        journalEntryId: item.journalEntryId,
+        date: new Date(item.epoch * 1000).toISOString().split('T')[0], // Convert epoch to YYYY-MM-DD
+        daysAgo: Math.floor((Date.now() - item.epoch * 1000) / (1000 * 60 * 60 * 24)),
+        authorName: item.userName || 'Unknown',
+        summary: item.shortTitle || 'No summary available',
+        excerpt: item.summary || 'No excerpt available'
+      };
+
+      // Add scoring fields like search results
+      // Always include detail level
+      const detailLevel = this._getDetailLevel(item.detailScore);
+      if (detailLevel) {
+        result.detailLevel = detailLevel;
+      }
+      
+      // Conditionally include moment significance (≥0.55 threshold)
+      const momentSignificance = this._getMomentSignificance(item.keyMomentScore);
+      if (momentSignificance) {
+        result.momentSignificance = momentSignificance;
+      }
+      
+      // Conditionally include crisis level (≥0.55 threshold)
+      const crisisLevel = this._getCrisisLevel(item.crisisIntensityScore);
+      if (crisisLevel) {
+        result.crisisLevel = crisisLevel;
+      }
+      
+      // Conditionally include effective strategies (≥0.55 threshold)
+      const effectiveStrategies = this._getEffectiveStrategies(item.effectiveStrategiesScore);
+      if (effectiveStrategies) {
+        result.effectiveStrategies = effectiveStrategies;
+      }
+
+      return result;
+    });
+
+    return {
+      childName,
+      totalResults: transformedResults.length,
+      results: transformedResults,
+      hasMore: response.hasMore,
+      nextOffset: response.nextOffset,
+      message: `Found ${transformedResults.length} entries. Use journal entry IDs for full details. Scoring fields help you decide which entries to retrieve: detailLevel (always present: Brief/Moderate/High), momentSignificance (≥0.55: Minor/Notable/Major key moment), crisisLevel (≥0.55: Elevated/High intensity/Crisis situation), effectiveStrategies (≥0.55: Helpful/Good/Highly effective strategies).`
+    };
   }
 
   async execute(args, session) {
@@ -67,20 +210,18 @@ export class ListJournalEntriesTool {
     const { childId, childName } = this.sessionManager.getSelectedChild(session.sessionId);
     
     try {
-      const { startDate, endDate } = this._calculateDateRange(timeRange);
+      const limit = this._calculateLimitForTimeRange(timeRange);
       
-      logger.debug('Listing journal entries', { 
+      logger.debug('Listing journal entries from feed', { 
         childId, 
         timeRange,
-        startDate,
-        endDate
+        limit
       });
       
-      // Call the journal list API endpoint
+      // Call the journal list API endpoint (via feed)
       const response = await this.apiClient.listJournalEntries(childId, {
-        startDate,
-        endDate,
-        sortOrder: 'desc' // Most recent first
+        limit,
+        offset: 0
       });
       
       logger.debug('Journal entries listed', { 
@@ -103,8 +244,8 @@ export class ListJournalEntriesTool {
         truncated = true;
       }
       
-      // Transform response to match search results format for consistency
-      const transformed = transformJournalSearchResults(transformedResponse, childName);
+      // Transform response from feed format to list format
+      const transformed = this.transformFeedToList(transformedResponse, childName);
       
       // Add truncation info if needed
       if (truncated) {
@@ -117,7 +258,7 @@ export class ListJournalEntriesTool {
       
       // Add time range info
       transformed.timeRange = timeRange;
-      transformed.dateRange = { startDate, endDate };
+      transformed.note = `Showing the ${limit} most recent journal entries (feed-based, chronological order).`;
       
       logger.debug('Journal entries transformed', {
         originalSize: JSON.stringify(response).length,

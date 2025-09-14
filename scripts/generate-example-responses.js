@@ -145,6 +145,22 @@ const TOOLS = [
       name: 'get_hashtag_analysis',
       arguments: { hashtagType: 'Incident', timeRange: 'last_30_days' }
     }
+  },
+  {
+    name: 'List Journal Entries',
+    method: 'tools/call',
+    params: {
+      name: 'list_journal_entries',
+      arguments: { timeRange: 'last_30_days' }
+    }
+  },
+  {
+    name: 'List Village Members',
+    method: 'tools/call',
+    params: {
+      name: 'list_village_members',
+      arguments: { includeInvitationDetails: true }
+    }
   }
 ];
 

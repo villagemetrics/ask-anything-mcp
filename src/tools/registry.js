@@ -2,6 +2,7 @@ import { createLogger } from '../utils/logger.js';
 // Session management tools
 import { ListChildrenTool } from './session/listChildren.js';
 import { SelectChildTool } from './session/selectChild.js';
+import { ListVillageMembersTool } from './session/listVillageMembers.js';
 // Tracking tools
 import { GetBehaviorScoresTool } from './tracking/getBehaviorScores.js';
 import { GetDateRangeMetadataTool } from './tracking/getDateRangeMetadata.js';
@@ -34,6 +35,7 @@ export class ToolRegistry {
       // Session tools - conditionally include selectChild based on allowChildSwitching
       listChildren: new ListChildrenTool(sessionManager, apiOptions),
       ...(mcpOptions.allowChildSwitching !== false ? { selectChild: new SelectChildTool(sessionManager, apiOptions, mcpOptions) } : {}),
+      listVillageMembers: new ListVillageMembersTool(sessionManager, apiOptions),
       // Tracking tools
       getBehaviorScores: new GetBehaviorScoresTool(sessionManager, apiOptions),
       getDateRangeMetadata: new GetDateRangeMetadataTool(sessionManager, apiOptions),
@@ -66,6 +68,7 @@ export class ToolRegistry {
     if (this.toolInstances.selectChild) {
       this.registerToolClass(SelectChildTool, this.toolInstances.selectChild);
     }
+    this.registerToolClass(ListVillageMembersTool, this.toolInstances.listVillageMembers);
     
     // Register tracking tools
     this.registerToolClass(GetBehaviorScoresTool, this.toolInstances.getBehaviorScores);

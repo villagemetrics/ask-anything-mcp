@@ -6,8 +6,8 @@ import { transformJournalSearchResults } from '../../src/transformers/journalDat
 
 describe('List Journal Entries Tool', function() {
   
-  // Unit tests for date range calculation
-  describe('Date Range Calculation', function() {
+  // Unit tests for limit calculation (feed API doesn't support date ranges)
+  describe('Limit Calculation', function() {
     let tool;
     
     beforeEach(function() {
@@ -15,44 +15,29 @@ describe('List Journal Entries Tool', function() {
       tool = new ListJournalEntriesTool(sessionManager, { bypassApiValidation: true });
     });
 
-    it('should calculate correct date range for last_7_days', function() {
-      const { startDate, endDate } = tool._calculateDateRange('last_7_days');
-      
-      const today = new Date().toISOString().split('T')[0];
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      
-      expect(endDate).to.equal(today);
-      expect(startDate).to.equal(sevenDaysAgo);
+    it('should calculate correct limit for last_7_days', function() {
+      const limit = tool._calculateLimitForTimeRange('last_7_days');
+      expect(limit).to.equal(20);
     });
 
-    it('should calculate correct date range for last_30_days', function() {
-      const { startDate, endDate } = tool._calculateDateRange('last_30_days');
-      
-      const today = new Date().toISOString().split('T')[0];
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      
-      expect(endDate).to.equal(today);
-      expect(startDate).to.equal(thirtyDaysAgo);
+    it('should calculate correct limit for last_14_days', function() {
+      const limit = tool._calculateLimitForTimeRange('last_14_days');
+      expect(limit).to.equal(35);
     });
 
-    it('should calculate correct date range for last_60_days', function() {
-      const { startDate, endDate } = tool._calculateDateRange('last_60_days');
-      
-      const today = new Date().toISOString().split('T')[0];
-      const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      
-      expect(endDate).to.equal(today);
-      expect(startDate).to.equal(sixtyDaysAgo);
+    it('should calculate correct limit for last_30_days', function() {
+      const limit = tool._calculateLimitForTimeRange('last_30_days');
+      expect(limit).to.equal(50);
     });
 
-    it('should default to 30 days for unknown timeRange', function() {
-      const { startDate, endDate } = tool._calculateDateRange('invalid_range');
-      
-      const today = new Date().toISOString().split('T')[0];
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      
-      expect(endDate).to.equal(today);
-      expect(startDate).to.equal(thirtyDaysAgo);
+    it('should calculate correct limit for last_60_days', function() {
+      const limit = tool._calculateLimitForTimeRange('last_60_days');
+      expect(limit).to.equal(50);
+    });
+
+    it('should default to 50 for unknown timeRange', function() {
+      const limit = tool._calculateLimitForTimeRange('invalid_range');
+      expect(limit).to.equal(50);
     });
   });
 
@@ -164,9 +149,8 @@ describe('List Journal Entries Tool', function() {
         expect(result).to.have.property('results');
         expect(result).to.have.property('message');
         expect(result).to.have.property('timeRange', 'last_30_days');
-        expect(result).to.have.property('dateRange');
-        expect(result.dateRange).to.have.property('startDate');
-        expect(result.dateRange).to.have.property('endDate');
+        expect(result).to.have.property('note');
+        expect(result).to.have.property('totalResults');
         
         if (result.results.length > 0) {
           const entry = result.results[0];
@@ -174,6 +158,12 @@ describe('List Journal Entries Tool', function() {
           expect(entry).to.have.property('date');
           expect(entry).to.have.property('summary');
           expect(entry).to.have.property('authorName');
+          expect(entry).to.have.property('daysAgo');
+          expect(entry).to.have.property('excerpt');
+          // Scoring fields may or may not be present depending on scores
+          if (entry.detailLevel) {
+            expect(entry.detailLevel).to.be.a('string');
+          }
         }
       } catch (error) {
         // If API endpoint doesn't exist yet (404), skip this test
