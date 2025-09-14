@@ -20,6 +20,8 @@ import { GetHashtagAnalysisTool } from './analysis/getHashtagAnalysis.js';
 import { GetMedicationDetailedAnalysisTool } from './analysis/getMedicationDetailedAnalysis.js';
 // System tools
 import { GetVersionInfoTool } from './system/getVersionInfo.js';
+// Help tools
+import { GetProductHelpTool } from './help/getProductHelp.js';
 
 const logger = createLogger('ToolRegistry');
 
@@ -53,6 +55,8 @@ export class ToolRegistry {
       getHashtagAnalysis: new GetHashtagAnalysisTool(sessionManager, apiOptions),
       // System tools
       getVersionInfo: new GetVersionInfoTool(autoUpdater),
+      // Help tools
+      getProductHelp: new GetProductHelpTool(sessionManager, apiOptions),
       // Future tools will be added here:
       // Math tools
     };
@@ -90,6 +94,9 @@ export class ToolRegistry {
     
     // Register system tools
     this.registerToolClass(GetVersionInfoTool, this.toolInstances.getVersionInfo);
+    
+    // Register help tools
+    this.registerToolClass(GetProductHelpTool, this.toolInstances.getProductHelp);
     
     logger.info('Tools registered', { count: this.tools.size });
   }
