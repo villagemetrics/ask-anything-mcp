@@ -160,6 +160,27 @@ export class VMApiClient {
     }
   }
 
+  async listJournalEntries(childId, options = {}) {
+    try {
+      const response = await this.client.get(`/v1/children/${childId}/journal/entries`, {
+        params: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+          sortOrder: options.sortOrder || 'desc'
+        }
+      });
+      logger.debug('Journal entries list API response received', { 
+        childId,
+        startDate: options.startDate,
+        endDate: options.endDate,
+        resultCount: response.data?.results?.length || 0
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getDateRangeMetadata(childId) {
     try {
       const response = await this.client.get(`/v1/children/${childId}/analysis/date-range-metadata`);

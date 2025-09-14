@@ -9,6 +9,7 @@ import { GetDateRangeMetadataTool } from './tracking/getDateRangeMetadata.js';
 import { SearchJournalsTool } from './journal/searchJournals.js';
 import { GetJournalEntryTool } from './journal/getJournalEntry.js';
 import { GetJournalDetailsTool } from './journal/getJournalDetails.js';
+import { ListJournalEntriesTool } from './journal/listJournalEntries.js';
 // Analysis tools
 import { GetOverviewAnalysisTool } from './analysis/getOverviewAnalysis.js';
 import { GetBehaviorAnalysisTool } from './analysis/getBehaviorAnalysis.js';
@@ -40,6 +41,7 @@ export class ToolRegistry {
       searchJournals: new SearchJournalsTool(sessionManager, apiOptions),
       getJournalEntry: new GetJournalEntryTool(sessionManager, apiOptions),
       getJournalDetails: new GetJournalDetailsTool(sessionManager, apiOptions),
+      listJournalEntries: new ListJournalEntriesTool(sessionManager, apiOptions),
       // Analysis tools
       getOverviewAnalysis: new GetOverviewAnalysisTool(sessionManager, apiOptions),
       getBehaviorAnalysis: new GetBehaviorAnalysisTool(sessionManager, apiOptions),
@@ -73,6 +75,7 @@ export class ToolRegistry {
     this.registerToolClass(SearchJournalsTool, this.toolInstances.searchJournals);
     this.registerToolClass(GetJournalEntryTool, this.toolInstances.getJournalEntry);
     this.registerToolClass(GetJournalDetailsTool, this.toolInstances.getJournalDetails);
+    this.registerToolClass(ListJournalEntriesTool, this.toolInstances.listJournalEntries);
     
     // Register analysis tools
     this.registerToolClass(GetOverviewAnalysisTool, this.toolInstances.getOverviewAnalysis);
