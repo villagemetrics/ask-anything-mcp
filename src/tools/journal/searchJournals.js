@@ -13,7 +13,7 @@ export class SearchJournalsTool {
   static get definition() {
     return {
       name: 'search_journal_entries',
-      description: 'Search journal entries using semantic (meaning-based) search powered by AI. Finds content related to the overall meaning of your query, not just exact keyword matches. Works best with natural language descriptions of what you\'re looking for.',
+      description: 'Search journal entries using semantic (meaning-based) search powered by AI. Finds content related to the overall meaning of your query, not just exact keyword matches. Works best with natural language descriptions of what you\'re looking for. Results include scoring to help you decide which entries warrant full retrieval with get_journal_entry.',
       inputSchema: {
         type: 'object',
         properties: {

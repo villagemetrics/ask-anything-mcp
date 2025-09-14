@@ -2,6 +2,7 @@ import { createLogger } from '../utils/logger.js';
 // Session management tools
 import { ListChildrenTool } from './session/listChildren.js';
 import { SelectChildTool } from './session/selectChild.js';
+import { ListVillageMembersTool } from './session/listVillageMembers.js';
 // Tracking tools
 import { GetBehaviorScoresTool } from './tracking/getBehaviorScores.js';
 import { GetDateRangeMetadataTool } from './tracking/getDateRangeMetadata.js';
@@ -9,6 +10,7 @@ import { GetDateRangeMetadataTool } from './tracking/getDateRangeMetadata.js';
 import { SearchJournalsTool } from './journal/searchJournals.js';
 import { GetJournalEntryTool } from './journal/getJournalEntry.js';
 import { GetJournalDetailsTool } from './journal/getJournalDetails.js';
+import { ListJournalEntriesTool } from './journal/listJournalEntries.js';
 // Analysis tools
 import { GetOverviewAnalysisTool } from './analysis/getOverviewAnalysis.js';
 import { GetBehaviorAnalysisTool } from './analysis/getBehaviorAnalysis.js';
@@ -18,6 +20,8 @@ import { GetHashtagAnalysisTool } from './analysis/getHashtagAnalysis.js';
 import { GetMedicationDetailedAnalysisTool } from './analysis/getMedicationDetailedAnalysis.js';
 // System tools
 import { GetVersionInfoTool } from './system/getVersionInfo.js';
+// Help tools
+import { GetProductHelpTool } from './help/getProductHelp.js';
 
 const logger = createLogger('ToolRegistry');
 
@@ -33,6 +37,7 @@ export class ToolRegistry {
       // Session tools - conditionally include selectChild based on allowChildSwitching
       listChildren: new ListChildrenTool(sessionManager, apiOptions),
       ...(mcpOptions.allowChildSwitching !== false ? { selectChild: new SelectChildTool(sessionManager, apiOptions, mcpOptions) } : {}),
+      listVillageMembers: new ListVillageMembersTool(sessionManager, apiOptions),
       // Tracking tools
       getBehaviorScores: new GetBehaviorScoresTool(sessionManager, apiOptions),
       getDateRangeMetadata: new GetDateRangeMetadataTool(sessionManager, apiOptions),
@@ -40,6 +45,7 @@ export class ToolRegistry {
       searchJournals: new SearchJournalsTool(sessionManager, apiOptions),
       getJournalEntry: new GetJournalEntryTool(sessionManager, apiOptions),
       getJournalDetails: new GetJournalDetailsTool(sessionManager, apiOptions),
+      listJournalEntries: new ListJournalEntriesTool(sessionManager, apiOptions),
       // Analysis tools
       getOverviewAnalysis: new GetOverviewAnalysisTool(sessionManager, apiOptions),
       getBehaviorAnalysis: new GetBehaviorAnalysisTool(sessionManager, apiOptions),
@@ -49,6 +55,8 @@ export class ToolRegistry {
       getHashtagAnalysis: new GetHashtagAnalysisTool(sessionManager, apiOptions),
       // System tools
       getVersionInfo: new GetVersionInfoTool(autoUpdater),
+      // Help tools
+      getProductHelp: new GetProductHelpTool(sessionManager, apiOptions),
       // Future tools will be added here:
       // Math tools
     };
@@ -64,6 +72,7 @@ export class ToolRegistry {
     if (this.toolInstances.selectChild) {
       this.registerToolClass(SelectChildTool, this.toolInstances.selectChild);
     }
+    this.registerToolClass(ListVillageMembersTool, this.toolInstances.listVillageMembers);
     
     // Register tracking tools
     this.registerToolClass(GetBehaviorScoresTool, this.toolInstances.getBehaviorScores);
@@ -73,6 +82,7 @@ export class ToolRegistry {
     this.registerToolClass(SearchJournalsTool, this.toolInstances.searchJournals);
     this.registerToolClass(GetJournalEntryTool, this.toolInstances.getJournalEntry);
     this.registerToolClass(GetJournalDetailsTool, this.toolInstances.getJournalDetails);
+    this.registerToolClass(ListJournalEntriesTool, this.toolInstances.listJournalEntries);
     
     // Register analysis tools
     this.registerToolClass(GetOverviewAnalysisTool, this.toolInstances.getOverviewAnalysis);
@@ -84,6 +94,9 @@ export class ToolRegistry {
     
     // Register system tools
     this.registerToolClass(GetVersionInfoTool, this.toolInstances.getVersionInfo);
+    
+    // Register help tools
+    this.registerToolClass(GetProductHelpTool, this.toolInstances.getProductHelp);
     
     logger.info('Tools registered', { count: this.tools.size });
   }
