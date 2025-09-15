@@ -3,21 +3,25 @@ import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
+import { VMApiClient } from '../../clients/vmApiClient.js';
 
 const logger = createLogger('GetVersionInfoTool');
 
 export class GetVersionInfoTool {
-  constructor(autoUpdater = null) {
+  constructor(autoUpdater = null, apiOptions = {}) {
     // Read package.json once at initialization
     const __dirname = dirname(fileURLToPath(import.meta.url));
     this.packageJson = JSON.parse(readFileSync(join(__dirname, '..', '..', '..', 'package.json'), 'utf-8'));
     this.autoUpdater = autoUpdater;
+    
+    // Create API client to get base URL for debugging
+    this.apiClient = new VMApiClient(apiOptions);
   }
 
   static get definition() {
     return {
       name: 'get_version_info',
-      description: 'Get detailed version and system information for the Ask Anything MCP. Useful for troubleshooting and support.',
+      description: 'Get detailed version, system, and API connection information for the Ask Anything MCP. Useful for troubleshooting and support.',
       inputSchema: {
         type: 'object',
         properties: {},
@@ -60,6 +64,10 @@ export class GetVersionInfoTool {
           userId: session.userId,
           sessionId: session.sessionId,
           selectedChildId: session.selectedChildId || 'none'
+        },
+        api: {
+          baseUrl: this.apiClient.baseUrl,
+          tokenType: this.apiClient.tokenType
         },
         autoUpdater: this.autoUpdater ? this.autoUpdater.getUpdateStatus() : {
           enabled: false,

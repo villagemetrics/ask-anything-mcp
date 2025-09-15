@@ -10,7 +10,13 @@ describe('GetVersionInfoTool', function() {
   
   beforeEach(function() {
     mockAutoUpdater = new AutoUpdater();
-    versionTool = new GetVersionInfoTool(mockAutoUpdater);
+    
+    // Use apiOptions to test API connection info
+    const apiOptions = {
+      tokenType: 'mcp'
+    };
+    
+    versionTool = new GetVersionInfoTool(mockAutoUpdater, apiOptions);
     
     mockSession = {
       userId: 'test-user-123',
@@ -26,6 +32,7 @@ describe('GetVersionInfoTool', function() {
       expect(definition).to.have.property('name', 'get_version_info');
       expect(definition).to.have.property('description');
       expect(definition.description).to.include('version');
+      expect(definition.description).to.include('API connection');
       expect(definition).to.have.property('inputSchema');
       expect(definition.inputSchema.type).to.equal('object');
       expect(definition.inputSchema.required).to.be.an('array').that.is.empty;
@@ -62,6 +69,14 @@ describe('GetVersionInfoTool', function() {
       expect(result.session).to.have.property('sessionId', 'test-session-456');
       expect(result.session).to.have.property('selectedChildId', 'test-child-789');
       
+      // Check API connection info
+      expect(result).to.have.property('api');
+      expect(result.api).to.have.property('baseUrl');
+      expect(result.api.baseUrl).to.be.a('string');
+      expect(result.api.baseUrl).to.match(/^https:\/\//); // Must be HTTPS
+      expect(result.api).to.have.property('tokenType', 'mcp');
+      expect(result.api.tokenType).to.be.oneOf(['mcp', 'auth']);
+      
       // Check auto-updater info
       expect(result).to.have.property('autoUpdater');
       expect(result.autoUpdater).to.have.property('packageName');
@@ -78,7 +93,7 @@ describe('GetVersionInfoTool', function() {
     });
     
     it('should handle missing autoUpdater gracefully', async function() {
-      const toolWithoutUpdater = new GetVersionInfoTool(null);
+      const toolWithoutUpdater = new GetVersionInfoTool(null, {});
       const result = await toolWithoutUpdater.execute({}, mockSession);
       
       expect(result).to.have.property('autoUpdater');
@@ -100,6 +115,24 @@ describe('GetVersionInfoTool', function() {
       const result = await versionTool.execute({}, mockSession);
       
       expect(result.process.uptime).to.match(/\d+ seconds/);
+    });
+    
+    it('should support different token types', async function() {
+      // Test with auth token type
+      const authTool = new GetVersionInfoTool(mockAutoUpdater, { tokenType: 'auth' });
+      const result = await authTool.execute({}, mockSession);
+      
+      expect(result.api).to.have.property('tokenType', 'auth');
+      expect(result.api.tokenType).to.be.oneOf(['mcp', 'auth']);
+    });
+    
+    it('should include API base URL for debugging', async function() {
+      const result = await versionTool.execute({}, mockSession);
+      
+      // Should include the base URL (either from env or default)
+      expect(result.api.baseUrl).to.be.a('string');
+      expect(result.api.baseUrl.length).to.be.greaterThan(0);
+      expect(result.api.baseUrl).to.match(/^https:\/\/.*\.villagemetrics\.com$/);
     });
   });
 });
