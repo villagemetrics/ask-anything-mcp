@@ -22,6 +22,8 @@ import { GetMedicationDetailedAnalysisTool } from './analysis/getMedicationDetai
 import { GetVersionInfoTool } from './system/getVersionInfo.js';
 // Help tools
 import { GetProductHelpTool } from './help/getProductHelp.js';
+// Feedback tools
+import { SubmitProductFeedbackTool } from './feedback/submitProductFeedback.js';
 
 const logger = createLogger('ToolRegistry');
 
@@ -57,6 +59,8 @@ export class ToolRegistry {
       getVersionInfo: new GetVersionInfoTool(autoUpdater),
       // Help tools
       getProductHelp: new GetProductHelpTool(sessionManager, apiOptions),
+      // Feedback tools
+      submitProductFeedback: new SubmitProductFeedbackTool(sessionManager, apiOptions),
       // Future tools will be added here:
       // Math tools
     };
@@ -97,6 +101,9 @@ export class ToolRegistry {
     
     // Register help tools
     this.registerToolClass(GetProductHelpTool, this.toolInstances.getProductHelp);
+    
+    // Register feedback tools
+    this.registerToolClass(SubmitProductFeedbackTool, this.toolInstances.submitProductFeedback);
     
     logger.info('Tools registered', { count: this.tools.size });
   }
