@@ -33,6 +33,7 @@ export class ToolRegistry {
     this.tokenValidator = tokenValidator;
     this.apiOptions = apiOptions; // Token configuration for VMApiClient
     this.mcpOptions = mcpOptions; // MCP configuration (preSelectedChildId, allowChildSwitching, etc.)
+    this.autoUpdater = autoUpdater; // Store autoUpdater for pending update notifications
     
     // Initialize tool instances with API options
     this.toolInstances = {
@@ -56,7 +57,7 @@ export class ToolRegistry {
       getJournalAnalysis: new GetJournalAnalysisTool(sessionManager, apiOptions),
       getHashtagAnalysis: new GetHashtagAnalysisTool(sessionManager, apiOptions),
       // System tools
-      getVersionInfo: new GetVersionInfoTool(autoUpdater),
+      getVersionInfo: new GetVersionInfoTool(autoUpdater, apiOptions),
       // Help tools
       getProductHelp: new GetProductHelpTool(sessionManager, apiOptions),
       // Feedback tools
@@ -144,9 +145,27 @@ export class ToolRegistry {
       const duration = Date.now() - startTime;
       logger.debug('Tool executed successfully', { tool: name, durationMs: duration });
       
+      // Check for pending update notification
+      const updateNotification = this.autoUpdater?.getPendingUpdateNotification();
+      
+      // Prepare the final result
+      let finalResult = result;
+      if (updateNotification) {
+        // Append update notification to the result
+        if (typeof result === 'string') {
+          finalResult = `${result}\n\n${updateNotification}`;
+        } else if (result && typeof result === 'object') {
+          // If result is an object, add the notification as a property
+          finalResult = {
+            ...result,
+            updateNotification
+          };
+        }
+      }
+      
       // Wrap result with timing information
       return {
-        result,
+        result: finalResult,
         timing: {
           duration
         }

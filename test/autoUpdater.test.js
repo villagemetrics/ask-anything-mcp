@@ -92,19 +92,13 @@ describe('AutoUpdater', function() {
 
   describe('error handling', function() {
     it('should handle network errors gracefully', async function() {
-      // Mock checkForUpdates to throw network error
-      const originalCheck = autoUpdater.checkForUpdates;
-      
-      autoUpdater.checkForUpdates = async function() {
-        throw new Error('Network error');
-      };
+      // Create a new AutoUpdater instance with invalid package name to force error
+      const errorUpdater = new AutoUpdater();
+      errorUpdater.packageName = 'this-package-definitely-does-not-exist-12345';
       
       // Should not throw, should return false
-      const result = await autoUpdater.checkForUpdates();
+      const result = await errorUpdater.checkForUpdates();
       expect(result).to.be.false;
-      
-      // Restore
-      autoUpdater.checkForUpdates = originalCheck;
     });
   });
 });

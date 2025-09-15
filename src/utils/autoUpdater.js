@@ -122,12 +122,21 @@ export class AutoUpdater {
       });
 
       // If we get here, the update was successful
-      logger.info('Update successful, initiating graceful shutdown');
+      logger.info('Update successful - new version ready on next restart', {
+        from: this.currentVersion,
+        to: newVersion,
+        message: 'New version will be active when MCP client restarts'
+      });
       
-      // Give a moment for logging to flush
-      setTimeout(() => {
-        process.exit(0);
-      }, 1000);
+      // Set flag that update is pending
+      this.pendingUpdateVersion = newVersion;
+      
+      // IMPORTANT: Do NOT call process.exit() here!
+      // Previously we called process.exit(0) which killed the MCP server process
+      // and broke the stdio connection to Claude/MCP clients, causing them to hang.
+      // Instead, we keep the current version running and notify users that a restart
+      // is needed to activate the new version. The update is already installed globally
+      // and will be used the next time the MCP client starts this server.
 
     } catch (error) {
       logger.error('Update process failed', {
@@ -174,7 +183,17 @@ export class AutoUpdater {
       packageName: this.packageName,
       currentVersion: this.currentVersion,
       lastCheckTime: this.lastCheckTime,
-      periodicChecksEnabled: !!this.updateCheckInterval
+      periodicChecksEnabled: !!this.updateCheckInterval,
+      pendingUpdateVersion: this.pendingUpdateVersion || null,
+      hasPendingUpdate: !!this.pendingUpdateVersion
     };
+  }
+
+  getPendingUpdateNotification() {
+    if (!this.pendingUpdateVersion) {
+      return null;
+    }
+    
+    return `📦 Update: Version ${this.pendingUpdateVersion} is installed. Restart your MCP client to use the new version.`;
   }
 }
