@@ -161,6 +161,17 @@ const TOOLS = [
       name: 'list_village_members',
       arguments: { includeInvitationDetails: true }
     }
+  },
+  {
+    name: 'Submit Product Feedback',
+    method: 'tools/call',
+    params: {
+      name: 'submit_product_feedback',
+      arguments: { 
+        feedbackText: 'The Ask Anything MCP tool is working great! This is an example feedback submission for documentation purposes.',
+        source: 'ask-anything'
+      }
+    }
   }
 ];
 

@@ -308,4 +308,21 @@ export class VMApiClient {
       throw error;
     }
   }
+
+  async submitProductFeedback(feedbackText, source = 'ask-anything') {
+    try {
+      const response = await this.client.post('/v1/product-feedback', {
+        feedbackText,
+        source
+      });
+      logger.debug('Product feedback API response received', { 
+        success: response.data?.success,
+        source,
+        feedbackLength: feedbackText?.length || 0
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
