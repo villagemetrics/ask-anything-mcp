@@ -19,7 +19,7 @@ export class SearchJournalsTool {
         properties: {
           query: {
             type: 'string',
-            description: 'Describe what you\'re looking for in natural language. Examples: "tantrum at bedtime", "successful strategies for transitions", "funny moments with siblings", "challenging behaviors at school". You can combine related concepts in one query, but use separate searches for unrelated topics.'
+            description: 'Natural language search query describing what you\'re looking for. The search uses semantic understanding to find relevant content based on meaning, not just exact word matches. Examples: "tantrum at bedtime", "successful strategies for transitions", "funny moments with siblings". Avoid keyword stuffing (lists of similar terms) - the search engine captures meaning and context automatically. Use descriptive phrases that express your search intent clearly. Note: Multiple concepts in one query work like weighted OR (entries matching some concepts will be returned with lower scores than entries matching all concepts). Use separate searches when you want comprehensive coverage of distinct topics or when combining concepts might dilute your results.'
           },
           limit: {
             type: 'number',
