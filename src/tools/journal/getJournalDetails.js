@@ -11,8 +11,8 @@ export class GetJournalDetailsTool {
 
   static get definition() {
     return {
-      name: 'get_journal_entry_details',
-      description: 'Get additional detailed analysis of a journal entry. Returns DIFFERENT data than get_journal_entry: BCBA professional analysis, per-goal behavior scores (1-4 scale) with reasoning, child profile (likes/dislikes/strengths), detailed hashtag metrics, and all scoring metrics. Call get_journal_entry first for basic content.',
+      name: 'get_journal_entry_analysis',
+      description: 'Get detailed analysis of a single journal entry. Returns DIFFERENT data than get_journal_entry: BCBA professional analysis, per-goal behavior scores (1-4 scale) with reasoning, child profile (likes/dislikes/strengths), detailed hashtag metrics, and all scoring metrics. Call get_journal_entry first for basic content.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -65,6 +65,7 @@ export class GetJournalDetailsTool {
     return {
       childName,
       journalEntryId: entry.journalEntryId,
+      shortTitle: results.shortTitle || '',
       date: entry.date,
       
       // BCBA Analysis
