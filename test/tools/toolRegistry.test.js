@@ -52,7 +52,7 @@ describe('Tool Registry', function() {
       expect(toolNames).to.include('get_date_range_metadata');
       expect(toolNames).to.include('search_journal_entries');
       expect(toolNames).to.include('get_journal_entry');
-      expect(toolNames).to.include('get_journal_entry_details');
+      expect(toolNames).to.include('get_journal_entry_analysis');
       
       // Analysis tools
       expect(toolNames).to.include('get_overview_analysis');
