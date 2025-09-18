@@ -52,6 +52,14 @@ export class MCPCore {
         apiOptions.mcpToken = this.options.mcpToken;
       }
       
+      logger.debug('MCPCore passing apiOptions to ToolRegistry', {
+        tokenType: apiOptions.tokenType,
+        hasAuthToken: !!apiOptions.authToken,
+        hasMcpToken: !!apiOptions.mcpToken,
+        authTokenLength: apiOptions.authToken?.length || 0,
+        authTokenPrefix: apiOptions.authToken?.substring(0, 20) + '...' || 'none'
+      });
+      
       this.toolRegistry = new ToolRegistry(this.sessionManager, null, apiOptions, this.options);
       
       // Pre-populate session if user context provided

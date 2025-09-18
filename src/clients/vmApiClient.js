@@ -86,7 +86,12 @@ export class VMApiClient {
       baseUrl: this.baseUrl, 
       tokenType: this.tokenType,
       hasToken: !!this.token,
-      tokenLength: this.token?.length || 0
+      tokenLength: this.token?.length || 0,
+      tokenSource: options.authToken ? 'options.authToken' : 
+                   options.mcpToken ? 'options.mcpToken' :
+                   process.env.VM_AUTH_TOKEN ? 'VM_AUTH_TOKEN env var' :
+                   process.env.VM_MCP_TOKEN ? 'VM_MCP_TOKEN env var' : 'unknown',
+      tokenPrefix: this.token?.substring(0, 20) + '...' || 'none'
     });
   }
 
