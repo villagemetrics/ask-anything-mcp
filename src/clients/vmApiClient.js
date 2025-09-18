@@ -45,20 +45,35 @@ export class VMApiClient {
       timeout: 30000  // 30 seconds for potentially slow vector searches
     });
 
-    // Add response interceptor for consistent error logging
+    // Add request interceptor to log outgoing requests
+    this.client.interceptors.request.use(
+      config => {
+        const fullUrl = `${this.baseUrl}${config.url}`;
+        logger.debug('API request starting', {
+          method: config.method,
+          fullUrl: fullUrl
+        });
+        return config;
+      }
+    );
+
+    // Add response interceptor for consistent success/error logging
     this.client.interceptors.response.use(
       response => {
+        const fullUrl = `${this.baseUrl}${response.config.url}`;
         logger.debug('API request successful', {
           method: response.config.method,
-          url: response.config.url,
+          fullUrl: fullUrl,
           status: response.status
         });
         return response;
       },
       error => {
+        const fullUrl = `${this.baseUrl}${error.config?.url || ''}`;
+          
         const errorDetails = {
           method: error.config?.method,
-          url: error.config?.url,
+          fullUrl: fullUrl,
           status: error.response?.status,
           statusText: error.response?.statusText,
           // HIPAA Compliance: Response data may contain PHI, so we comment out for production
