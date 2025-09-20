@@ -115,10 +115,10 @@ const TOOLS = [
     }
   },
   {
-    name: 'Get Journal Analysis',
+    name: 'List Notable Journal Entries',
     method: 'tools/call',
     params: {
-      name: 'get_journal_analysis',
+      name: 'list_notable_journal_entries',
       arguments: { timeRange: 'last_30_days' }
     }
   },

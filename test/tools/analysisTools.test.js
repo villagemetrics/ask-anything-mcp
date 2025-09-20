@@ -3,7 +3,7 @@ import { SessionManager } from '../../src/session/sessionManager.js';
 import { GetOverviewAnalysisTool } from '../../src/tools/analysis/getOverviewAnalysis.js';
 import { GetBehaviorAnalysisTool } from '../../src/tools/analysis/getBehaviorAnalysis.js';
 import { GetMedicationAnalysisTool } from '../../src/tools/analysis/getMedicationAnalysis.js';
-import { GetJournalAnalysisTool } from '../../src/tools/analysis/getJournalAnalysis.js';
+import { ListNotableJournalEntriesTool } from '../../src/tools/analysis/listNotableJournalEntries.js';
 import { GetHashtagAnalysisTool } from '../../src/tools/analysis/getHashtagAnalysis.js';
 import { GetMedicationDetailedAnalysisTool } from '../../src/tools/analysis/getMedicationDetailedAnalysis.js';
 import { ListChildrenTool } from '../../src/tools/session/listChildren.js';
@@ -20,7 +20,7 @@ describe('Analysis Tools', function() {
   let behaviorAnalysisTool;
   let medicationAnalysisTool;
   let medicationDetailedAnalysisTool;
-  let journalAnalysisTool;
+  let listNotableJournalEntriesTool;
   let hashtagAnalysisTool;
 
   beforeEach(function() {
@@ -37,7 +37,7 @@ describe('Analysis Tools', function() {
     behaviorAnalysisTool = new GetBehaviorAnalysisTool(sessionManager, apiOptions);
     medicationAnalysisTool = new GetMedicationAnalysisTool(sessionManager, apiOptions);
     medicationDetailedAnalysisTool = new GetMedicationDetailedAnalysisTool(sessionManager, apiOptions);
-    journalAnalysisTool = new GetJournalAnalysisTool(sessionManager, apiOptions);
+    listNotableJournalEntriesTool = new ListNotableJournalEntriesTool(sessionManager, apiOptions);
     hashtagAnalysisTool = new GetHashtagAnalysisTool(sessionManager, apiOptions);
     
     // Create a test session
@@ -51,7 +51,7 @@ describe('Analysis Tools', function() {
         GetBehaviorAnalysisTool.definition,
         GetMedicationAnalysisTool.definition,
         GetMedicationDetailedAnalysisTool.definition,
-        GetJournalAnalysisTool.definition,
+        ListNotableJournalEntriesTool.definition,
         GetHashtagAnalysisTool.definition
       ];
 
@@ -85,7 +85,7 @@ describe('Analysis Tools', function() {
         GetBehaviorAnalysisTool.definition.name,
         GetMedicationAnalysisTool.definition.name,
         GetMedicationDetailedAnalysisTool.definition.name,
-        GetJournalAnalysisTool.definition.name,
+        ListNotableJournalEntriesTool.definition.name,
         GetHashtagAnalysisTool.definition.name
       ];
 
@@ -109,7 +109,7 @@ describe('Analysis Tools', function() {
       tools[1].tool = behaviorAnalysisTool;
       tools[2].tool = medicationAnalysisTool;
       tools[3].tool = medicationDetailedAnalysisTool;
-      tools[4].tool = journalAnalysisTool;
+      tools[4].tool = listNotableJournalEntriesTool;
       tools[5].tool = hashtagAnalysisTool;
     });
 
@@ -294,12 +294,12 @@ describe('Analysis Tools', function() {
       }
     });
 
-    it('should successfully get journal analysis', async function() {
+      it('should successfully list notable journal entries', async function() {
       const session = { sessionId: testSessionId, userId: 'test-user' };
       const child = await setupChildSelection(session);
       
       if (child) {
-        const result = await journalAnalysisTool.execute({
+        const result = await listNotableJournalEntriesTool.execute({
           timeRange: 'last_30_days'
         }, session);
 
@@ -371,7 +371,7 @@ describe('Analysis Tools', function() {
           behaviorAnalysisTool,
           medicationAnalysisTool,
           medicationDetailedAnalysisTool,
-          journalAnalysisTool,
+          listNotableJournalEntriesTool,
           hashtagAnalysisTool
         ];
 
