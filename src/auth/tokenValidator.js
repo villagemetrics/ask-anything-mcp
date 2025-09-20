@@ -24,7 +24,7 @@ export class TokenValidator {
     }
 
     try {
-      logger.debug('Validating MCP token', { tokenPrefix: token.substring(0, 10) + '...' });
+      logger.debug('Validating MCP token', { tokenPrefix: token.substring(0, 10) + '...', apiUrl: this.apiBaseUrl });
 
       // Simple approach: make any authenticated API call to test the token
       // If it succeeds, the token is valid. If it fails, the token is invalid.
@@ -33,7 +33,7 @@ export class TokenValidator {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        timeout: 10000 // 10 second timeout
+        timeout: 15000 // 15 second timeout to handle production network latency
       });
 
       // If we get here, the token is valid and we have user context
@@ -63,11 +63,19 @@ export class TokenValidator {
           logger.error('MCP token validation failed - API error', { status, error: message });
           throw new Error(`Token validation failed: ${message}. Go to Settings → Connect AI Tools to check your token`);
         }
-      } else if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-        logger.error('MCP token validation failed - connection error', { error: error.message });
-        throw new Error('Unable to connect to Village Metrics API for token validation. Check your network connection');
+      } else if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+        logger.error('MCP token validation failed - network error', { 
+          error: error.message, 
+          code: error.code,
+          apiUrl: this.apiBaseUrl 
+        });
+        throw new Error(`Unable to connect to Village Metrics API (${error.code}). This may be due to network issues or high server load during startup. Please try again in a moment`);
       } else {
-        logger.error('MCP token validation failed', { error: error.message });
+        logger.error('MCP token validation failed - unknown error', { 
+          error: error.message, 
+          code: error.code,
+          apiUrl: this.apiBaseUrl 
+        });
         throw new Error(`Token validation failed: ${error.message}. Go to Settings → Connect AI Tools to check your token`);
       }
     }
