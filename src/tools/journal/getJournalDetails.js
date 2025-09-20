@@ -12,7 +12,7 @@ export class GetJournalDetailsTool {
   static get definition() {
     return {
       name: 'get_journal_entry_analysis',
-      description: 'Get detailed analysis of a single journal entry. Returns DIFFERENT data than get_journal_entry: BCBA professional analysis, per-goal behavior scores (1-4 scale) with reasoning, child profile (likes/dislikes/strengths), detailed hashtag metrics, and all scoring metrics. Call get_journal_entry first for basic content.',
+      description: 'Get detailed professional analysis of a journal entry. Returns DIFFERENT data than get_journal_entry: BCBA analysis, per-goal behavior scores with reasoning, child profile insights, detailed hashtag metadata with reasoning, analytical summaries, identified challenges/successes, all scoring metrics, and professional insights.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -65,8 +65,20 @@ export class GetJournalDetailsTool {
     return {
       childName,
       journalEntryId: entry.journalEntryId,
-      shortTitle: results.shortTitle || '',
       date: entry.date,
+      
+      // Analytical text summaries (moved from main tool)
+      analyticalSummaries: {
+        shortTitle: results.shortTitle || '',
+        summary: results.summary || '',
+        longSummary: results.longSummary || ''
+      },
+      
+      // Key insights (moved from main tool)
+      keyInsights: {
+        identifiedChallenges: results.identifiedChallenges || [],
+        notableSuccesses: results.notableSuccesses || []
+      },
       
       // BCBA Analysis
       professionalAnalysis: {
@@ -93,9 +105,10 @@ export class GetJournalDetailsTool {
         memoryFacts: results.childProfile?.memoryFacts || []
       },
       
-      // Full hashtag metadata
+      // Full hashtag metadata with reasoning (more detailed than main tool)
       hashtagsDetailed: (results.hashtags || []).map(h => ({
         tag: h.hashtag,
+        reasoning: h.commentary || '',
         type: h.type || '',
         confidence: h.confidence || 0,
         impact: h.impact || 0,

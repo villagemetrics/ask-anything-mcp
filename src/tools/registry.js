@@ -163,13 +163,8 @@ export class ToolRegistry {
         }
       }
       
-      // Wrap result with timing information
-      return {
-        result: finalResult,
-        timing: {
-          duration
-        }
-      };
+      // Return the result directly without timing noise
+      return finalResult;
     } catch (error) {
       const duration = Date.now() - startTime;
       logger.error('Tool execution failed', { 
