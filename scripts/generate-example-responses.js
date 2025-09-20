@@ -115,10 +115,10 @@ const TOOLS = [
     }
   },
   {
-    name: 'Get Journal Analysis',
+    name: 'List Notable Journal Entries',
     method: 'tools/call',
     params: {
-      name: 'get_journal_analysis',
+      name: 'list_notable_journal_entries',
       arguments: { timeRange: 'last_30_days' }
     }
   },
@@ -335,6 +335,7 @@ async function runAllTools() {
       
       if (searchResult.response.result?.content?.[0]?.text) {
         const searchData = JSON.parse(searchResult.response.result.content[0].text);
+        
         if (searchData.results?.[0]?.journalEntryId) {
           const journalEntryId = searchData.results[0].journalEntryId;
           
@@ -346,13 +347,13 @@ async function runAllTools() {
           addToOutput('Get Journal Entry', entryResult.request, entryResult.response);
           console.log('✓ Get Journal Entry');
           
-          // Get journal entry details
+          // Get journal entry analysis
           const detailsResult = await sendMessage(mcp, 'tools/call', {
-            name: 'get_journal_entry_details',
+            name: 'get_journal_entry_analysis',
             arguments: { journalEntryId: journalEntryId }
           });
-          addToOutput('Get Journal Entry Details', detailsResult.request, detailsResult.response);
-          console.log('✓ Get Journal Entry Details');
+          addToOutput('Get Journal Entry Analysis', detailsResult.request, detailsResult.response);
+          console.log('✓ Get Journal Entry Analysis');
         }
       }
     } catch (error) {

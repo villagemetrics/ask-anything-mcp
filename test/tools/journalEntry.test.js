@@ -80,32 +80,32 @@ describe('Journal Entry Tools', function() {
       expect(result.date).to.be.a('string');
       expect(result.entryType).to.be.a('string');
       
-      // Check text content
-      expect(result.shortTitle).to.be.a('string');
-      expect(result.summary).to.be.a('string'); 
-      expect(result.longSummary).to.be.a('string');
+      // Check only fullText is present (no summaries in streamlined main tool)
       expect(result.fullText).to.be.a('string');
       
-      // Check scores (can be null)
-      expect(result.sentiment).to.be.a('number');
-      expect(result.keyMomentScore).to.be.a('number');
-      expect(result.effectiveStrategiesScore).to.be.a('number');
-      
-      // Check hashtags array
+      // Check hashtags array (should be simple array of strings)
       expect(result.hashtags).to.be.an('array');
       if (result.hashtags.length > 0) {
-        const hashtag = result.hashtags[0];
-        expect(hashtag.tag).to.be.a('string');
-        expect(hashtag.reason).to.be.a('string');
-        expect(hashtag.type).to.be.a('string');
+        expect(result.hashtags[0]).to.be.a('string');
       }
       
-      // Check insights arrays
-      expect(result.identifiedChallenges).to.be.an('array');
-      expect(result.notableSuccesses).to.be.an('array');
+      // Check optional overall behavior score
+      if (result.overallBehaviorScore !== null && result.overallBehaviorScore !== undefined) {
+        expect(result.overallBehaviorScore).to.be.a('number');
+      }
       
-      // Check note about get_journal_details
-      expect(result.note).to.include('get_journal_details');
+      // Check note about get_journal_entry_analysis
+      expect(result.note).to.include('get_journal_entry_analysis');
+      
+      // Verify analytical fields are NOT present (moved to detailed analysis tool)
+      expect(result.shortTitle).to.be.undefined;
+      expect(result.summary).to.be.undefined;
+      expect(result.longSummary).to.be.undefined;
+      expect(result.sentiment).to.be.undefined;
+      expect(result.keyMomentScore).to.be.undefined;
+      expect(result.effectiveStrategiesScore).to.be.undefined;
+      expect(result.identifiedChallenges).to.be.undefined;
+      expect(result.notableSuccesses).to.be.undefined;
     });
 
     it('should handle journal entry not found', async function() {

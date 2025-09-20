@@ -2,9 +2,9 @@ import { createLogger } from '../../utils/logger.js';
 import { VMApiClient } from '../../clients/vmApiClient.js';
 import { transformJournalAnalysis } from '../../transformers/analysisData.js';
 
-const logger = createLogger('GetJournalAnalysisTool');
+const logger = createLogger('ListNotableJournalEntriesTool');
 
-export class GetJournalAnalysisTool {
+export class ListNotableJournalEntriesTool {
   constructor(sessionManager, apiOptions = {}) {
     this.sessionManager = sessionManager;
     this.apiClient = new VMApiClient(apiOptions);
@@ -12,18 +12,18 @@ export class GetJournalAnalysisTool {
 
   static get definition() {
     return {
-      name: 'get_journal_analysis',
-      description: `Get qualitative insights from journal entries including key moments, significant events, behavioral milestones, and journal statistics for the selected child. Focuses on narrative insights and important events rather than hashtag effectiveness.
-      
+      name: 'list_notable_journal_entries',
+      description: `List journal entries that stand out as particularly noteworthy based on algorithmic scoring. Returns a curated list of entries that scored highly (0.7+) in special categories like key moments, heartfelt stories, funny moments, effective strategies, turnarounds, and more. Also provides journal statistics for the time period.
+
 Best for answering:
-- "What significant events happened recently?"
-- "What were the most challenging days?"
-- "What key moments show progress or setbacks?"
-- "What detailed context explains behavior changes?"
-- "What themes emerge from journal entries?"
-- "Which events had the biggest behavioral impact?"
-- "What successes should we build on?"
-- "What challenges are caregivers facing?"`,
+- "What were the most important moments recently?"
+- "Show me heartfelt or touching stories"
+- "What funny things happened lately?" 
+- "List entries showing effective strategies working"
+- "What key breakthroughs or turnarounds occurred?"
+- "Show me the most significant events in this period"
+- "What notable successes should we celebrate?"
+- "List entries that stand out from the routine"`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -60,7 +60,7 @@ Best for answering:
       // Transform to LLM-friendly format (extracts only journal-related data)
       const transformed = transformJournalAnalysis(rawData, childName, timeRange);
       
-      logger.debug('Journal analysis retrieved', { 
+      logger.debug('Notable journal entries retrieved', { 
         childId, 
         timeRange, 
         hasData: transformed.hasData,
@@ -84,13 +84,13 @@ Best for answering:
         return {
           timeRange,
           childName,
-          message: `No journal analysis data found for ${childName} in the ${timeRange} period. Journal entries may not exist yet or analysis may not be available.`,
+          message: `No notable journal entries found for ${childName} in the ${timeRange} period. Journal entries may not exist yet or none may have scored highly in special categories.`,
           hasData: false
         };
       }
       
-      logger.error('Failed to get journal analysis', { error: error.message, timeRange });
-      throw new Error(`Failed to get journal analysis: ${error.message}`);
+      logger.error('Failed to find notable journal entries', { error: error.message, timeRange });
+      throw new Error(`Failed to find notable journal entries: ${error.message}`);
     }
   }
 }

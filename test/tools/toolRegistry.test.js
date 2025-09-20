@@ -58,7 +58,7 @@ describe('Tool Registry', function() {
       expect(toolNames).to.include('get_overview_analysis');
       expect(toolNames).to.include('get_behavior_analysis');
       expect(toolNames).to.include('get_medication_analysis');
-      expect(toolNames).to.include('get_journal_analysis');
+      expect(toolNames).to.include('list_notable_journal_entries');
       expect(toolNames).to.include('get_hashtag_analysis');
       expect(toolNames).to.include('get_medication_detailed_analysis');
     });

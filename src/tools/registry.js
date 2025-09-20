@@ -15,7 +15,7 @@ import { ListJournalEntriesTool } from './journal/listJournalEntries.js';
 import { GetOverviewAnalysisTool } from './analysis/getOverviewAnalysis.js';
 import { GetBehaviorAnalysisTool } from './analysis/getBehaviorAnalysis.js';
 import { GetMedicationAnalysisTool } from './analysis/getMedicationAnalysis.js';
-import { GetJournalAnalysisTool } from './analysis/getJournalAnalysis.js';
+import { ListNotableJournalEntriesTool } from './analysis/listNotableJournalEntries.js';
 import { GetHashtagAnalysisTool } from './analysis/getHashtagAnalysis.js';
 import { GetMedicationDetailedAnalysisTool } from './analysis/getMedicationDetailedAnalysis.js';
 // System tools
@@ -54,7 +54,7 @@ export class ToolRegistry {
       getBehaviorAnalysis: new GetBehaviorAnalysisTool(sessionManager, apiOptions),
       getMedicationAnalysis: new GetMedicationAnalysisTool(sessionManager, apiOptions),
       getMedicationDetailedAnalysis: new GetMedicationDetailedAnalysisTool(sessionManager, apiOptions),
-      getJournalAnalysis: new GetJournalAnalysisTool(sessionManager, apiOptions),
+      listNotableJournalEntries: new ListNotableJournalEntriesTool(sessionManager, apiOptions),
       getHashtagAnalysis: new GetHashtagAnalysisTool(sessionManager, apiOptions),
       // System tools
       getVersionInfo: new GetVersionInfoTool(autoUpdater, apiOptions),
@@ -94,7 +94,7 @@ export class ToolRegistry {
     this.registerToolClass(GetBehaviorAnalysisTool, this.toolInstances.getBehaviorAnalysis);
     this.registerToolClass(GetMedicationAnalysisTool, this.toolInstances.getMedicationAnalysis);
     this.registerToolClass(GetMedicationDetailedAnalysisTool, this.toolInstances.getMedicationDetailedAnalysis);
-    this.registerToolClass(GetJournalAnalysisTool, this.toolInstances.getJournalAnalysis);
+    this.registerToolClass(ListNotableJournalEntriesTool, this.toolInstances.listNotableJournalEntries);
     this.registerToolClass(GetHashtagAnalysisTool, this.toolInstances.getHashtagAnalysis);
     
     // Register system tools
@@ -163,13 +163,8 @@ export class ToolRegistry {
         }
       }
       
-      // Wrap result with timing information
-      return {
-        result: finalResult,
-        timing: {
-          duration
-        }
-      };
+      // Return the result directly without timing noise
+      return finalResult;
     } catch (error) {
       const duration = Date.now() - startTime;
       logger.error('Tool execution failed', { 

@@ -13,6 +13,31 @@ import { AutoUpdater } from './utils/autoUpdater.js';
 
 const logger = createLogger('MCPServer');
 
+// Add global exception handlers for better crash troubleshooting
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception - MCP Server will exit', { 
+    error: error.message, 
+    stack: error.stack,
+    errorType: error.constructor.name
+  });
+  process.stderr.write(`\nUNCAUGHT EXCEPTION: ${error.message}\n`);
+  process.stderr.write(`Stack: ${error.stack}\n`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection - MCP Server will exit', { 
+    reason: reason?.message || reason, 
+    promiseState: promise.constructor?.name || 'Unknown',
+    stack: reason?.stack
+  });
+  process.stderr.write(`\nUNHANDLED PROMISE REJECTION: ${reason}\n`);
+  if (reason?.stack) {
+    process.stderr.write(`Stack: ${reason.stack}\n`);
+  }
+  process.exit(1);
+});
+
 // Read version from package.json
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -36,13 +61,23 @@ const server = new Server(
 );
 
 // Initialize components
+logger.info('Initializing MCP components...');
 const tokenValidator = new TokenValidator();
 const sessionManager = new SessionManager();
 const autoUpdater = new AutoUpdater();
 const toolRegistry = new ToolRegistry(sessionManager, tokenValidator, {}, {}, autoUpdater);
+logger.info('MCP components initialized successfully');
 
 // Validate token on startup
 async function validateEnvironment() {
+  // Log environment info for troubleshooting crashes
+  logger.debug('Environment info', {
+    nodeVersion: process.version,
+    platform: process.platform,
+    arch: process.arch,
+    vmApiBaseUrl: process.env.VM_API_BASE_URL || 'not set'
+  });
+  
   const token = process.env.VM_MCP_TOKEN;
   if (!token) {
     logger.error('VM_MCP_TOKEN environment variable is required');
@@ -54,13 +89,18 @@ async function validateEnvironment() {
   try {
     const userContext = await tokenValidator.validateToken(token);
     const sessionId = sessionManager.createSession(userContext.userId);
-    logger.info('MCP server initialized successfully', { userId: userContext.userId, sessionId });
     
     // Store session ID globally for this process
     server.sessionId = sessionId;
+    
+    logger.info('MCP server initialized', { userId: userContext.userId, sessionId });
     return { userContext, sessionId };
   } catch (error) {
-    logger.error('Token validation failed', { error: error.message });
+    logger.error('Token validation failed', { 
+      error: error.message,
+      stack: error.stack,
+      errorType: error.constructor.name
+    });
     process.stderr.write(`ERROR: Invalid token - ${error.message}\n`);
     process.stderr.write('Please check your VM_MCP_TOKEN and try again.\n');
     process.exit(1);

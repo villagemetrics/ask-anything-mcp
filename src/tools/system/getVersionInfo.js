@@ -82,6 +82,7 @@ export class GetVersionInfoTool {
         ...versionInfo,
         supportInfo: {
           message: 'For technical support, please include this version information when reporting issues.',
+          contact: 'hello@villagemetrics.com',
           githubIssues: 'https://github.com/villagemetrics/ask-anything-mcp/issues',
           documentation: 'https://docs.villagemetrics.com/mcp'
         }

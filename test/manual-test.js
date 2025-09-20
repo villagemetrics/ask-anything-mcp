@@ -231,7 +231,7 @@ function showMenu() {
       case '13':
         rl.question('Enter time range (last_7_days, last_30_days, last_90_days, last_180_days, last_365_days): ', (timeRange) => {
           sendMessage('tools/call', {
-            name: 'get_journal_analysis',
+            name: 'list_notable_journal_entries',
             arguments: { timeRange }
           });
           setTimeout(showMenu, 8000);

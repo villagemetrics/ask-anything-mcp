@@ -12,7 +12,7 @@ export class GetJournalEntryTool {
   static get definition() {
     return {
       name: 'get_journal_entry',
-      description: 'Get a journal entry by ID. Returns core information: text content (title, summaries, full text), overall behavior score, sentiment, key insights (challenges/successes), and simplified hashtags. Use get_journal_details for professional analysis and detailed scores.',
+      description: 'Get a journal entry by ID. Returns essential information only: full text content, basic hashtag names, and overall behavior score. Use get_journal_entry_analysis for detailed professional analysis, insights, and scoring breakdowns.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -62,42 +62,24 @@ export class GetJournalEntryTool {
   transformJournalEntry(entry, childName) {
     const results = entry.results || {};
     
-    // Core information that's most commonly needed
+    // Essential information only - hand-picked fields to prevent bloat
     const transformed = {
       childName,
       journalEntryId: entry.journalEntryId,
       date: entry.date,
       entryType: entry.entryType,
       
-      // Text summaries
-      shortTitle: results.shortTitle || '',
-      summary: results.summary || '',
-      longSummary: results.longSummary || '',
-      
-      // Clean version of the full text
+      // Full text content only (no summaries - those go in detailed analysis)
       fullText: results.cleanVersion || entry.text || '',
       
-      // Overall sentiment and key scores
-      sentiment: results.sentiment || 0,
-      keyMomentScore: results.keyMomentScore || 0,
-      effectiveStrategiesScore: results.effectiveStrategiesScore || 0,
-      
-      // Overall behavior score
+      // Overall behavior score for basic context
       overallBehaviorScore: results.inferredBehaviorScores?.overall || null,
       
-      // Simplified hashtags (just names and commentary)
-      hashtags: (results.hashtags || []).map(h => ({
-        tag: h.hashtag,
-        reason: h.commentary || '',
-        type: h.type || ''
-      })),
-      
-      // Key insights
-      identifiedChallenges: results.identifiedChallenges || [],
-      notableSuccesses: results.notableSuccesses || [],
+      // Simple hashtags - just the tag names
+      hashtags: (results.hashtags || []).map(h => h.hashtag).filter(Boolean),
       
       // Note about getting more details
-      note: "Use get_journal_details tool for behavior score breakdowns, BCBA analysis, child profile, and detailed hashtag metadata"
+      note: "Use get_journal_entry_analysis tool to get detailed professional analysis, insights, scoring breakdowns, and analytical summaries for this same journal entry"
     };
 
     return transformed;

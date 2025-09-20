@@ -42,7 +42,11 @@ export class VMApiClient {
         'Authorization': `Bearer ${this.token}`,
         'Content-Type': 'application/json'
       },
-      timeout: 30000  // 30 seconds for potentially slow vector searches
+      timeout: 30000,  // 30 seconds for potentially slow vector searches
+      // Improve connection handling for production
+      maxRedirects: 5,
+      httpAgent: false, // Use global agent for connection pooling
+      httpsAgent: false // Use global agent for connection pooling
     });
 
     // Add request interceptor to log outgoing requests
@@ -97,7 +101,7 @@ export class VMApiClient {
       }
     );
 
-    logger.info('API client initialized', { 
+    logger.debug('API client initialized', { 
       baseUrl: this.baseUrl, 
       tokenType: this.tokenType,
       hasToken: !!this.token,
