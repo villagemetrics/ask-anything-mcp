@@ -61,23 +61,21 @@ export class GetJournalEntryTool {
 
   transformJournalEntry(entry, childName) {
     const results = entry.results || {};
-    
+
     // Essential information only - hand-picked fields to prevent bloat
     const transformed = {
       childName,
       journalEntryId: entry.journalEntryId,
       date: entry.date,
       entryType: entry.entryType,
-      
+      // Short title for quick reference
+      shortTitle: results.shortTitle || '',
       // Full text content only (no summaries - those go in detailed analysis)
       fullText: results.cleanVersion || entry.text || '',
-      
       // Overall behavior score for basic context
       overallBehaviorScore: results.inferredBehaviorScores?.overall || null,
-      
       // Simple hashtags - just the tag names
       hashtags: (results.hashtags || []).map(h => h.hashtag).filter(Boolean),
-      
       // Note about getting more details
       note: "Use get_journal_entry_analysis tool to get detailed professional analysis, insights, scoring breakdowns, and analytical summaries for this same journal entry"
     };

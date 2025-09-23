@@ -3,6 +3,7 @@ import { VMApiClient } from '../../src/clients/vmApiClient.js';
 import { SessionManager } from '../../src/session/sessionManager.js';
 import { GetJournalEntryTool } from '../../src/tools/journal/getJournalEntry.js';
 import { GetJournalDetailsTool } from '../../src/tools/journal/getJournalDetails.js';
+import sinon from 'sinon';
 
 describe('Journal Entry Tools', function() {
   let apiClient;
@@ -79,26 +80,28 @@ describe('Journal Entry Tools', function() {
       expect(result.journalEntryId).to.equal(testJournalEntryId);
       expect(result.date).to.be.a('string');
       expect(result.entryType).to.be.a('string');
-      
+
+      // Check shortTitle is present (now included in main tool)
+      expect(result.shortTitle).to.be.a('string');
+
       // Check only fullText is present (no summaries in streamlined main tool)
       expect(result.fullText).to.be.a('string');
-      
+
       // Check hashtags array (should be simple array of strings)
       expect(result.hashtags).to.be.an('array');
       if (result.hashtags.length > 0) {
         expect(result.hashtags[0]).to.be.a('string');
       }
-      
+
       // Check optional overall behavior score
       if (result.overallBehaviorScore !== null && result.overallBehaviorScore !== undefined) {
         expect(result.overallBehaviorScore).to.be.a('number');
       }
-      
+
       // Check note about get_journal_entry_analysis
       expect(result.note).to.include('get_journal_entry_analysis');
-      
+
       // Verify analytical fields are NOT present (moved to detailed analysis tool)
-      expect(result.shortTitle).to.be.undefined;
       expect(result.summary).to.be.undefined;
       expect(result.longSummary).to.be.undefined;
       expect(result.sentiment).to.be.undefined;
