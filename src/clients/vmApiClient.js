@@ -5,7 +5,12 @@ const logger = createLogger('VMApiClient');
 
 export class VMApiClient {
   constructor(options = {}) {
-    this.baseUrl = process.env.VM_API_BASE_URL || 'https://api.villagemetrics.com';
+    // Auto-detect API URL based on AWS_ENV if VM_API_BASE_URL not explicitly set
+    let defaultBaseUrl = 'https://api.villagemetrics.com'; // production default
+    if (!process.env.VM_API_BASE_URL && process.env.AWS_ENV === 'dev') {
+      defaultBaseUrl = 'https://api-dev.villagemetrics.com';
+    }
+    this.baseUrl = process.env.VM_API_BASE_URL || defaultBaseUrl;
     
     // Explicit token selection with clear precedence
     if (options.tokenType === 'auth' || options.tokenType === 'user') {
