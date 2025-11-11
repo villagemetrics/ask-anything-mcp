@@ -52,16 +52,29 @@ jobs:
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          
+
+          # Check if version was bumped from previous commit
+          git fetch origin main --depth=2
+          PREV_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8')).version")
+
+          if [ "$PACKAGE_VERSION" = "$PREV_VERSION" ]; then
+            echo "❌ ERROR: Version not bumped!"
+            echo "Current version: $PACKAGE_VERSION"
+            echo "Previous version: $PREV_VERSION"
+            echo "You must bump the version in package.json when making code changes."
+            exit 1
+          fi
+
           # Check if this version exists on npm
           if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
-            echo "Version $PACKAGE_VERSION already exists on npm"
-            echo "should_publish=false" >> $GITHUB_OUTPUT
+            echo "❌ ERROR: Version $PACKAGE_VERSION already exists on npm"
+            echo "This shouldn't happen if version was properly bumped."
+            exit 1
           else
-            echo "Version $PACKAGE_VERSION not found on npm, will publish"
+            echo "✅ Version $PACKAGE_VERSION not found on npm, will publish"
             echo "should_publish=true" >> $GITHUB_OUTPUT
           fi
-          
+
           echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
           echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
