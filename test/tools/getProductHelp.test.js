@@ -33,24 +33,27 @@ describe('Get Product Help Tool', () => {
     });
   });
 
-  describe('Section File Mapping', () => {
-    it('should return correct files for getting-started-setup', () => {
-      const files = tool.getSectionFiles('getting-started-setup');
-      
+  describe('Section File Mapping', function() {
+    // Increase timeout for network requests
+    this.timeout(10000);
+
+    it('should return correct files for getting-started-setup', async () => {
+      const files = await tool.getSectionFiles('getting-started-setup');
+
       expect(files.main).to.deep.equal(['getting-started.md', 'account-setup.md']);
       expect(files.supplemental).to.deep.equal([]);
     });
 
-    it('should return correct files for journal-recording-processing', () => {
-      const files = tool.getSectionFiles('journal-recording-processing');
-      
+    it('should return correct files for journal-recording-processing', async () => {
+      const files = await tool.getSectionFiles('journal-recording-processing');
+
       expect(files.main).to.deep.equal(['journal-entries.md']);
       expect(files.supplemental).to.deep.equal(['ai-supplemental/journal-processing-details.md']);
     });
 
-    it('should return correct files for hashtag-organization-system', () => {
-      const files = tool.getSectionFiles('hashtag-organization-system');
-      
+    it('should return correct files for hashtag-organization-system', async () => {
+      const files = await tool.getSectionFiles('hashtag-organization-system');
+
       expect(files.main).to.deep.equal(['hashtag-system.md']);
       expect(files.supplemental).to.deep.equal([
         'ai-supplemental/hashtag-categories-complete-list.md',
@@ -58,11 +61,33 @@ describe('Get Product Help Tool', () => {
       ]);
     });
 
-    it('should return empty arrays for unknown section', () => {
-      const files = tool.getSectionFiles('unknown-section');
-      
+    it('should return correct files for analysis-insights-troubleshooting including automated insights', async () => {
+      const files = await tool.getSectionFiles('analysis-insights-troubleshooting');
+
+      expect(files.main).to.deep.equal(['analysis-insights.md']);
+      expect(files.supplemental).to.include('ai-supplemental/automated-insights-details.md');
+      expect(files.supplemental).to.include('ai-supplemental/analysis-system-details.md');
+    });
+
+    it('should return empty arrays for unknown section', async () => {
+      const files = await tool.getSectionFiles('unknown-section');
+
       expect(files.main).to.deep.equal([]);
       expect(files.supplemental).to.deep.equal([]);
+    });
+
+    it('should cache the mapping and reuse it', async () => {
+      // First call - should fetch from remote
+      const files1 = await tool.getSectionFiles('getting-started-setup');
+      const cacheTime1 = tool.mappingCacheTime;
+
+      // Second call - should use cache
+      const files2 = await tool.getSectionFiles('journal-recording-processing');
+      const cacheTime2 = tool.mappingCacheTime;
+
+      expect(cacheTime1).to.equal(cacheTime2); // Same cache time = cache was used
+      expect(files1.main).to.have.length.greaterThan(0);
+      expect(files2.main).to.have.length.greaterThan(0);
     });
   });
 
@@ -155,14 +180,14 @@ describe('Get Product Help Tool', () => {
     it('should handle 404 errors gracefully', async () => {
       // Temporarily modify the tool to test 404 handling
       const originalSectionFiles = tool.getSectionFiles;
-      tool.getSectionFiles = () => ({
-        main: ['nonexistent-file.md'], 
+      tool.getSectionFiles = async () => ({
+        main: ['nonexistent-file.md'],
         supplemental: ['ai-supplemental/also-missing.md']
       });
 
       try {
         const result = await tool.execute({ section: 'test-404' }, {});
-        
+
         // Should return error response when no files are accessible
         expect(result.error).to.include('No documentation files could be accessed');
         expect(result.totalFiles).to.equal(0);
@@ -178,14 +203,14 @@ describe('Get Product Help Tool', () => {
     it('should provide warnings for partial failures', async () => {
       // Test case where some files load and others fail
       const originalSectionFiles = tool.getSectionFiles;
-      tool.getSectionFiles = () => ({
+      tool.getSectionFiles = async () => ({
         main: ['getting-started.md'], // This should work
         supplemental: ['ai-supplemental/nonexistent.md'] // This should fail
       });
 
       try {
         const result = await tool.execute({ section: 'test-partial' }, {});
-        
+
         expect(result.warnings).to.exist;
         expect(result.warnings[0]).to.include('1 documentation file(s) could not be accessed');
         expect(result.totalFiles).to.equal(1); // Only one successful

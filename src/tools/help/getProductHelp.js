@@ -6,6 +6,10 @@ export class GetProductHelpTool {
   constructor(sessionManager, apiOptions = {}) {
     this.sessionManager = sessionManager;
     this.baseUrl = 'https://docs.villagemetrics.com/raw';
+    this.mappingUrl = 'https://docs.villagemetrics.com/mcp-file-mapping.json';
+    this.cachedMapping = null;
+    this.mappingCacheTime = null;
+    this.mappingCacheTTL = 5 * 60 * 1000; // 5 minutes
   }
 
   static get definition() {
@@ -40,64 +44,62 @@ export class GetProductHelpTool {
     };
   }
 
-  // Define the file mapping for each section
-  getSectionFiles(section) {
-    const mapping = {
-      'getting-started-setup': {
-        main: ['getting-started.md', 'account-setup.md'],
-        supplemental: []
-      },
-      'journal-recording-processing': {
-        main: ['journal-entries.md'],
-        supplemental: ['ai-supplemental/journal-processing-details.md']
-      },
-      'behavior-tracking-goals': {
-        main: ['behavior-goals.md'],
-        supplemental: []
-      },
-      'village-invitations-management': {
-        main: ['village-system.md'],
-        supplemental: ['ai-supplemental/village-management-details.md']
-      },
-      'analysis-insights-troubleshooting': {
-        main: ['analysis-insights.md'],
-        supplemental: ['ai-supplemental/analysis-system-details.md']
-      },
-      'medication-tracking-analysis': {
-        main: ['medication-tracking.md'],
-        supplemental: ['ai-supplemental/medication-analysis-details.md']
-      },
-      'search-ask-anything-features': {
-        main: ['search-ask-anything.md'],
-        supplemental: []
-      },
-      'data-export-sharing-permissions': {
-        main: ['data-export-sharing.md'],
-        supplemental: ['ai-supplemental/export-specifications-detailed.md']
-      },
-      'account-settings-privacy': {
-        main: ['settings-privacy.md'],
-        supplemental: ['ai-supplemental/permission-system-details.md']
-      },
-      'hashtag-organization-system': {
-        main: ['hashtag-system.md'],
-        supplemental: ['ai-supplemental/hashtag-categories-complete-list.md', 'ai-supplemental/caregiver-types-complete-list.md']
-      },
-      'ai-tools-integration': {
-        main: ['ai-tools-integration.md'],
-        supplemental: ['ai-supplemental/technical-specifications-detailed.md']
-      },
-      'subscription-billing-access': {
-        main: [],
-        supplemental: ['ai-supplemental/subscription-access-details.md']
-      },
-      'troubleshooting-technical-issues': {
-        main: ['troubleshooting.md', 'best-practices.md'],
-        supplemental: []
+  /**
+   * Fetch the file mapping from docs.villagemetrics.com
+   * Uses a simple cache to avoid excessive fetches
+   */
+  async fetchFileMapping() {
+    // Return cached mapping if still valid
+    if (this.cachedMapping && this.mappingCacheTime) {
+      const age = Date.now() - this.mappingCacheTime;
+      if (age < this.mappingCacheTTL) {
+        logger.debug('Using cached file mapping', { age, ttl: this.mappingCacheTTL });
+        return this.cachedMapping;
       }
-    };
+    }
 
-    return mapping[section] || { main: [], supplemental: [] };
+    logger.debug('Fetching file mapping from remote', { url: this.mappingUrl });
+    const response = await fetch(this.mappingUrl);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file mapping: HTTP ${response.status} ${response.statusText}`);
+    }
+
+    const mapping = await response.json();
+
+    // Validate structure
+    if (!mapping.sections || typeof mapping.sections !== 'object') {
+      throw new Error('Invalid mapping structure: missing sections object');
+    }
+
+    // Cache the mapping
+    this.cachedMapping = mapping;
+    this.mappingCacheTime = Date.now();
+
+    logger.debug('File mapping fetched and cached', {
+      version: mapping.version,
+      sectionCount: Object.keys(mapping.sections).length
+    });
+
+    return mapping;
+  }
+
+  /**
+   * Get the file list for a specific section from the mapping
+   */
+  async getSectionFiles(section) {
+    const mapping = await this.fetchFileMapping();
+    const sectionData = mapping.sections[section];
+
+    if (!sectionData) {
+      logger.warn('Section not found in mapping', { section });
+      return { main: [], supplemental: [] };
+    }
+
+    return {
+      main: sectionData.main || [],
+      supplemental: sectionData.supplemental || []
+    };
   }
 
   async fetchMarkdownContent(filePath) {
@@ -131,14 +133,14 @@ export class GetProductHelpTool {
 
   async execute(args, session) {
     const { section } = args;
-    
+
     if (!section) {
       throw new Error('Section is required');
     }
 
-    const files = this.getSectionFiles(section);
+    const files = await this.getSectionFiles(section);
     const allFiles = [...files.main, ...files.supplemental];
-    
+
     if (allFiles.length === 0) {
       throw new Error(`No documentation files configured for section: ${section}`);
     }
