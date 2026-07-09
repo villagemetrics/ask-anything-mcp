@@ -44,10 +44,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
+          # Node 24 bundles npm >= 11.6, which satisfies trusted publishing's
+          # npm >= 11.5.1 requirement. Do not npm install -g npm@latest here -
+          # npm overwriting itself on the runner corrupts the install.
           node-version: '24'
-
-      - name: Update npm (trusted publishing requires npm >= 11.5.1)
-        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci
