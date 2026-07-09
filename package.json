@@ -2,6 +2,14 @@
   "name": "@villagemetrics-public/ask-anything-mcp",
   "version": "1.1.0",
   "description": "Model Context Protocol server for Village Metrics behavioral tracking data access",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/villagemetrics/ask-anything-mcp.git"
+  },
+  "homepage": "https://github.com/villagemetrics/ask-anything-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/villagemetrics/ask-anything-mcp/issues"
+  },
   "type": "module",
   "main": "src/lib/index.js",
   "exports": {
