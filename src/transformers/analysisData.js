@@ -111,6 +111,13 @@ export function transformOverviewAnalysis(rawData, childName, timeRange) {
     result.dateRange = { startDate, endDate };
   }
 
+  // Add previous period date range if available (for trend comparison context)
+  if (rawData.analysisMeta?.previousPeriodDateRange) {
+    const prevStartDate = new Date(rawData.analysisMeta.previousPeriodDateRange.startDate).toLocaleDateString();
+    const prevEndDate = new Date(rawData.analysisMeta.previousPeriodDateRange.endDate).toLocaleDateString();
+    result.previousPeriodDateRange = { startDate: prevStartDate, endDate: prevEndDate };
+  }
+
   // Add overall behavior score (from analysisData.overallBehavior)
   if (rawData.analysisData?.overallBehavior) {
     const behavior = rawData.analysisData.overallBehavior;
@@ -119,7 +126,8 @@ export function transformOverviewAnalysis(rawData, childName, timeRange) {
       previousScore: behavior.previousPeriodScore,
       scoreChange: behavior.scoreChange,
       daysWithData: behavior.daysWithData,
-      _scoreRange: "Behavior scores range from 1 (very challenging day) to 4 (excellent day). Higher scores indicate better behavior."
+      _scoreRange: "Behavior scores range from 1 (very challenging day) to 4 (excellent day). Higher scores indicate better behavior.",
+      _previousScoreNote: "previousScore is the average for the prior period shown in previousPeriodDateRange (same duration, ending the day before the current period starts)"
     };
   }
 
@@ -213,6 +221,13 @@ export function transformBehaviorAnalysis(rawAnalysisData, rawGoalsData, childNa
     result.dateRange = { startDate, endDate };
   }
 
+  // Add previous period date range if available (for trend comparison context)
+  if (rawAnalysisData?.analysisMeta?.previousPeriodDateRange) {
+    const prevStartDate = new Date(rawAnalysisData.analysisMeta.previousPeriodDateRange.startDate).toLocaleDateString();
+    const prevEndDate = new Date(rawAnalysisData.analysisMeta.previousPeriodDateRange.endDate).toLocaleDateString();
+    result.previousPeriodDateRange = { startDate: prevStartDate, endDate: prevEndDate };
+  }
+
   // Note: We don't include behaviorGoals separately as they're included in behaviorGoalAnalysis below to avoid duplication
 
   // Add overall behavior with score context
@@ -223,7 +238,8 @@ export function transformBehaviorAnalysis(rawAnalysisData, rawGoalsData, childNa
       previousScore: behavior.previousPeriodScore,
       scoreChange: behavior.scoreChange,
       daysWithData: behavior.daysWithData,
-      _scoreRange: "Behavior scores range from 1 (very challenging day) to 4 (excellent day). Higher scores indicate better behavior."
+      _scoreRange: "Behavior scores range from 1 (very challenging day) to 4 (excellent day). Higher scores indicate better behavior.",
+      _previousScoreNote: "previousScore is the average for the prior period shown in previousPeriodDateRange (same duration, ending the day before the current period starts)"
     };
   }
 
@@ -234,6 +250,7 @@ export function transformBehaviorAnalysis(rawAnalysisData, rawGoalsData, childNa
       averageScore: goal.averageScore,
       previousScore: goal.previousPeriodScore,
       scoreChange: goal.scoreChange,
+      _previousScoreNote: "previousScore is the average for the prior period shown in previousPeriodDateRange",
       whatWorks: goal.whatWorks?.map(item => ({
         hashtag: item.hashtag,
         averageScore: item.averageScore,
