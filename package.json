@@ -1,6 +1,6 @@
 {
   "name": "@villagemetrics-public/ask-anything-mcp",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Model Context Protocol server for Village Metrics behavioral tracking data access",
   "repository": {
     "type": "git",
@@ -12,6 +12,9 @@
   },
   "type": "module",
   "main": "src/lib/index.js",
+  "files": [
+    "src"
+  ],
   "exports": {
     ".": "./src/lib/index.js",
     "./server": "./src/index.js"
