@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { VMApiClient } from '../src/clients/vmApiClient.js';
-import { withRemoteCall } from '../src/lib/remoteCalls.js';
-import { MCPCore, ToolRegistry, SessionManager } from '../src/lib/index.js';
+import { VMApiClient } from '../../src/clients/vmApiClient.js';
+import { withRemoteCall } from '../../src/lib/remoteCalls.js';
+import { MCPCore, ToolRegistry, SessionManager } from '../../src/lib/index.js';
 
 describe('Closed MCP tool allowlist', () => {
   const allowed = ['search_journal_entries', 'get_journal_entry', 'get_hashtag_analysis', 'get_behavior_scores'];
