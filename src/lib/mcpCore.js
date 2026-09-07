@@ -1,3 +1,4 @@
+import { normalizeAllowedTools } from './toolAccess.js';
 import { withRemoteCall } from './remoteCalls.js';
 import { createLogger } from '../utils/logger.js';
 import { ToolRegistry } from '../tools/registry.js';
@@ -29,6 +30,7 @@ export class MCPCore {
       ...options
     };
     
+    this.options.allowedTools = normalizeAllowedTools(this.options.allowedTools);
     this.sessionId = null;
     this.userContext = null;
     
@@ -57,8 +59,7 @@ export class MCPCore {
         tokenType: apiOptions.tokenType,
         hasAuthToken: !!apiOptions.authToken,
         hasMcpToken: !!apiOptions.mcpToken,
-        authTokenLength: apiOptions.authToken?.length || 0,
-        authTokenPrefix: apiOptions.authToken?.substring(0, 20) + '...' || 'none'
+        authTokenLength: apiOptions.authToken?.length || 0
       });
       
       this.toolRegistry = new ToolRegistry(this.sessionManager, null, apiOptions, this.options);
@@ -224,6 +225,8 @@ export class MCPCore {
           const exportedClass = module[exportName];
           if (exportedClass && exportedClass.definition) {
             const definition = exportedClass.definition;
+            if (this.options.allowedTools !== undefined && !this.options.allowedTools.includes(definition.name)) continue;
+            if (definition.name === 'select_child' && this.options.allowChildSwitching === false) continue;
             toolDefinitions.push({
               name: definition.name,
               description: definition.description,

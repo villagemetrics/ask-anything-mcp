@@ -24,7 +24,7 @@ export function transformBehaviorData(rawData, childName) {
 
     if (rawData.goals && Array.isArray(rawData.goals)) {
       rawData.goals.forEach(goal => {
-        if (goal.name && goal.value !== undefined) {
+        if (goal.name && typeof goal.value === 'number' && Number.isFinite(goal.value)) {
           // Preserve exact decimal value (1.0 - 4.0)
           // API uses 'value' not 'score'
           scores[goal.name] = goal.value;

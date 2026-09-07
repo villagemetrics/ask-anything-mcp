@@ -1,3 +1,4 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../../lib/toolAccess.js';
 import { createLogger } from '../../utils/logger.js';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -9,6 +10,7 @@ const logger = createLogger('GetVersionInfoTool');
 
 export class GetVersionInfoTool {
   constructor(autoUpdater = null, apiOptions = {}) {
+    this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     // Read package.json once at initialization
     const __dirname = dirname(fileURLToPath(import.meta.url));
     this.packageJson = JSON.parse(readFileSync(join(__dirname, '..', '..', '..', 'package.json'), 'utf-8'));
@@ -31,6 +33,7 @@ export class GetVersionInfoTool {
   }
 
   async execute(args, session) {
+    assertToolAllowed(this.allowedTools, this.constructor.definition.name);
     try {
       const versionInfo = {
         mcp: {

@@ -1,3 +1,4 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../../lib/toolAccess.js';
 import { createLogger } from '../../utils/logger.js';
 import { VMApiClient } from '../../clients/vmApiClient.js';
 import { transformJournalSearchResults } from '../../transformers/journalData.js';
@@ -6,6 +7,7 @@ const logger = createLogger('SearchJournalsTool');
 
 export class SearchJournalsTool {
   constructor(sessionManager, apiOptions = {}) {
+    this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     this.sessionManager = sessionManager;
     this.apiClient = new VMApiClient(apiOptions);
   }
@@ -43,6 +45,7 @@ export class SearchJournalsTool {
   }
 
   async execute(args, session) {
+    assertToolAllowed(this.allowedTools, this.constructor.definition.name);
     const { query, limit = 10, offset = 0, mode, startDate, endDate, continuationToken } = args;
     
     if (!query) {
@@ -98,14 +101,14 @@ export class SearchJournalsTool {
       return transformed;
       
     } catch (error) {
-      if (response) { error.providerUsage = response.providerUsage || []; error.usageIncomplete = response.usageIncomplete ?? true; }
+      if (response) { error.providerUsage = response.providerUsage || []; error.stageUsage = response.stageUsage; error.usageIncomplete = response.usageIncomplete ?? true; }
       logger.error('Failed to search journals', { 
         error: error.message,
         childId,
         queryCharCount: query.length
       });
       if (['CANCELLED', 'DEADLINE_EXCEEDED'].includes(error.code)) throw error;
-      throw Object.assign(new Error(`Failed to search journals: ${error.message}`), { providerUsage: error.providerUsage, usageIncomplete: error.usageIncomplete });
+      throw Object.assign(new Error(`Failed to search journals: ${error.message}`), { providerUsage: error.providerUsage, stageUsage: error.stageUsage, usageIncomplete: error.usageIncomplete });
     }
   }
 }

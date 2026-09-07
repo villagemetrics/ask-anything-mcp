@@ -61,10 +61,22 @@ export class VMApiClient {
         const call = currentRemoteCall();
         if (call) {
           call.check();
+          if (call.pinnedChildId) {
+            // Inspect the raw path before URL normalization can erase traversal.
+            const raw = config.url;
+            const target = new URL(raw, this.baseUrl);
+            const allowedPath = raw.startsWith(`/v1/children/${call.pinnedChildId}/`) ||
+              raw === `/v1/feed/${call.pinnedChildId}` || raw === '/v1/children/me/all' || raw === '/v1/product-feedback';
+            if (typeof raw !== 'string' || /[%\\?#]/.test(raw) || raw.split('/').some(part => part === '.' || part === '..') ||
+                target.origin !== new URL(this.baseUrl).origin || !allowedPath) {
+              throw Object.assign(new Error('RESEARCH_CHILD_MISMATCH'), { code: 'RESEARCH_CHILD_MISMATCH' });
+            }
+          }
           config.signal = call.signal;
           config.timeout = Math.max(1, Math.min(config.timeout, call.deadlineEpochMs - Date.now()));
           config.headers['x-vm-deadline-epoch-ms'] = String(call.deadlineEpochMs);
           config.headers['x-vm-cancellation-id'] = call.cancellationId;
+          if (call.automatedMetadata) config.headers['x-vm-automated-research'] = JSON.stringify(call.automatedMetadata);
           config.remoteCallContext = call;
         }
         const fullUrl = `${this.baseUrl}${config.url}`;
@@ -93,6 +105,7 @@ export class VMApiClient {
         const call = error.config?.remoteCallContext || currentRemoteCall();
         const data = error.response?.data;
         error.providerUsage = data?.providerUsage || error.providerUsage || [];
+        error.stageUsage = data?.stageUsage || error.stageUsage;
         error.usageIncomplete = data?.usageIncomplete ?? true;
         if (call) {
           if (['CANCELLED', 'DEADLINE_EXCEEDED'].includes(data?.code)) call.cancel(data.code);
@@ -138,7 +151,7 @@ export class VMApiClient {
                    options.mcpToken ? 'options.mcpToken' :
                    process.env.VM_AUTH_TOKEN ? 'VM_AUTH_TOKEN env var' :
                    process.env.VM_MCP_TOKEN ? 'VM_MCP_TOKEN env var' : 'unknown',
-      tokenPrefix: this.token?.substring(0, 20) + '...' || 'none'
+      // Token contents are never logged.
     });
   }
 

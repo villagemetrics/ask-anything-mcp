@@ -1,3 +1,4 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../../lib/toolAccess.js';
 import { createLogger } from '../../utils/logger.js';
 import { VMApiClient } from '../../clients/vmApiClient.js';
 import { transformOverviewAnalysis } from '../../transformers/analysisData.js';
@@ -6,6 +7,7 @@ const logger = createLogger('GetOverviewAnalysisTool');
 
 export class GetOverviewAnalysisTool {
   constructor(sessionManager, apiOptions = {}) {
+    this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     this.sessionManager = sessionManager;
     this.apiClient = new VMApiClient(apiOptions);
   }
@@ -39,6 +41,7 @@ Best for answering:
   }
 
   async execute(args, session) {
+    assertToolAllowed(this.allowedTools, this.constructor.definition.name);
     const { timeRange } = args;
     
     if (!timeRange) {

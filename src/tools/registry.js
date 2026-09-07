@@ -1,3 +1,4 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../lib/toolAccess.js';
 import { createLogger } from '../utils/logger.js';
 // Session management tools
 import { ListChildrenTool } from './session/listChildren.js';
@@ -35,37 +36,34 @@ export class ToolRegistry {
     this.mcpOptions = mcpOptions; // MCP configuration (preSelectedChildId, allowChildSwitching, etc.)
     this.autoUpdater = autoUpdater; // Store autoUpdater for pending update notifications
     
-    // Initialize tool instances with API options
-    this.toolInstances = {
-      // Session tools - conditionally include selectChild based on allowChildSwitching
-      listChildren: new ListChildrenTool(sessionManager, apiOptions),
-      ...(mcpOptions.allowChildSwitching !== false ? { selectChild: new SelectChildTool(sessionManager, apiOptions, mcpOptions) } : {}),
-      listVillageMembers: new ListVillageMembersTool(sessionManager, apiOptions),
-      // Tracking tools
-      getBehaviorScores: new GetBehaviorScoresTool(sessionManager, apiOptions),
-      getDateRangeMetadata: new GetDateRangeMetadataTool(sessionManager, apiOptions),
-      // Journal tools
-      searchJournals: new SearchJournalsTool(sessionManager, apiOptions),
-      getJournalEntry: new GetJournalEntryTool(sessionManager, apiOptions),
-      getJournalDetails: new GetJournalDetailsTool(sessionManager, apiOptions),
-      listJournalEntries: new ListJournalEntriesTool(sessionManager, apiOptions),
-      // Analysis tools
-      getOverviewAnalysis: new GetOverviewAnalysisTool(sessionManager, apiOptions),
-      getBehaviorAnalysis: new GetBehaviorAnalysisTool(sessionManager, apiOptions),
-      getMedicationAnalysis: new GetMedicationAnalysisTool(sessionManager, apiOptions),
-      getMedicationDetailedAnalysis: new GetMedicationDetailedAnalysisTool(sessionManager, apiOptions),
-      listNotableJournalEntries: new ListNotableJournalEntriesTool(sessionManager, apiOptions),
-      getHashtagAnalysis: new GetHashtagAnalysisTool(sessionManager, apiOptions),
-      // System tools
-      getVersionInfo: new GetVersionInfoTool(autoUpdater, apiOptions),
-      // Help tools
-      getProductHelp: new GetProductHelpTool(sessionManager, apiOptions),
-      // Feedback tools
-      submitProductFeedback: new SubmitProductFeedbackTool(sessionManager, apiOptions),
-      // Future tools will be added here:
-      // Math tools
+    this.allowedTools = normalizeAllowedTools(mcpOptions.allowedTools);
+    this.apiOptions = { ...apiOptions, allowedTools: this.allowedTools };
+    const create = (ToolClass, ...args) => {
+      if (this.allowedTools !== undefined && !this.allowedTools.includes(ToolClass.definition.name)) return undefined;
+      if (ToolClass === SelectChildTool && mcpOptions.allowChildSwitching === false) return undefined;
+      return new ToolClass(...args);
     };
-    
+    this.toolInstances = {
+      listChildren: create(ListChildrenTool, sessionManager, this.apiOptions),
+      selectChild: create(SelectChildTool, sessionManager, this.apiOptions, mcpOptions),
+      listVillageMembers: create(ListVillageMembersTool, sessionManager, this.apiOptions),
+      getBehaviorScores: create(GetBehaviorScoresTool, sessionManager, this.apiOptions),
+      getDateRangeMetadata: create(GetDateRangeMetadataTool, sessionManager, this.apiOptions),
+      searchJournals: create(SearchJournalsTool, sessionManager, this.apiOptions),
+      getJournalEntry: create(GetJournalEntryTool, sessionManager, this.apiOptions),
+      getJournalDetails: create(GetJournalDetailsTool, sessionManager, this.apiOptions),
+      listJournalEntries: create(ListJournalEntriesTool, sessionManager, this.apiOptions),
+      getOverviewAnalysis: create(GetOverviewAnalysisTool, sessionManager, this.apiOptions),
+      getBehaviorAnalysis: create(GetBehaviorAnalysisTool, sessionManager, this.apiOptions),
+      getMedicationAnalysis: create(GetMedicationAnalysisTool, sessionManager, this.apiOptions),
+      getMedicationDetailedAnalysis: create(GetMedicationDetailedAnalysisTool, sessionManager, this.apiOptions),
+      listNotableJournalEntries: create(ListNotableJournalEntriesTool, sessionManager, this.apiOptions),
+      getHashtagAnalysis: create(GetHashtagAnalysisTool, sessionManager, this.apiOptions),
+      getVersionInfo: create(GetVersionInfoTool, autoUpdater, this.apiOptions),
+      getProductHelp: create(GetProductHelpTool, sessionManager, this.apiOptions),
+      submitProductFeedback: create(SubmitProductFeedbackTool, sessionManager, this.apiOptions),
+    };
+
     // Register all tools
     this.tools = new Map();
     this.registerTools();
@@ -110,6 +108,7 @@ export class ToolRegistry {
   }
   
   registerToolClass(ToolClass, instance) {
+    if (!instance) return;
     const definition = ToolClass.definition;
     this.registerTool({
       ...definition,
@@ -131,6 +130,7 @@ export class ToolRegistry {
   }
 
   async executeTool(name, args, sessionId) {
+    assertToolAllowed(this.allowedTools, name);
     const tool = this.tools.get(name);
     if (!tool) {
       throw new Error(`Tool not found: ${name}`);
