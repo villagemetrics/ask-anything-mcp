@@ -1,3 +1,4 @@
+import { withRemoteCall } from './remoteCalls.js';
 import { createLogger } from '../utils/logger.js';
 import { ToolRegistry } from '../tools/registry.js';
 import { SessionManager } from '../session/sessionManager.js';
@@ -232,6 +233,7 @@ export class MCPCore {
           }
         }
       } catch (error) {
+        if (['CANCELLED', 'DEADLINE_EXCEEDED'].includes(error.code)) throw error;
         // Log warning but don't fail - some files might not be tool classes
         logger.warn(`Failed to import tool from ${toolFile}`, { error: error.message });
       }
@@ -247,7 +249,11 @@ export class MCPCore {
    * @param {Object} args - Arguments for the tool
    * @returns {Promise<any>} Tool execution result
    */
-  async executeTool(toolName, args = {}) {
+  executeTool(toolName, args = {}, remoteCallContext) {
+    return withRemoteCall(remoteCallContext, () => this._executeTool(toolName, args));
+  }
+
+  async _executeTool(toolName, args = {}) {
     if (this.options.schemaOnly) {
       throw new Error(`Cannot execute tools in schema-only mode. Tool '${toolName}' requires full MCP Core initialization.`);
     }
@@ -283,7 +289,7 @@ export class MCPCore {
    * @param {Array} toolCalls - Array of {name, arguments} objects
    * @returns {Promise<Array>} Array of results
    */
-  async executeTools(toolCalls) {
+  async executeTools(toolCalls, remoteCallContext) {
     if (this.options.schemaOnly) {
       throw new Error('Cannot execute tools in schema-only mode. Tools require full MCP Core initialization.');
     }
@@ -295,13 +301,14 @@ export class MCPCore {
     const results = [];
     for (const toolCall of toolCalls) {
       try {
-        const result = await this.executeTool(toolCall.name, toolCall.arguments);
+        const result = await this.executeTool(toolCall.name, toolCall.arguments, remoteCallContext);
         results.push({
           toolName: toolCall.name,
           success: true,
           result
         });
       } catch (error) {
+        if (['CANCELLED', 'DEADLINE_EXCEEDED'].includes(error.code)) throw error;
         results.push({
           toolName: toolCall.name,
           success: false,

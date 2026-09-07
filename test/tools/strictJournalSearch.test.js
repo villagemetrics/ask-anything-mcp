@@ -45,4 +45,13 @@ describe('Strict journal search response faults', function () {
       await assert.rejects(execute(response), /STRICT_SEARCH_COMPLETION_INCONSISTENT/);
     }
   });
+  it('retains paid usage if response validation fails after successful search', async () => {
+    const response = valid();
+    response.providerUsage = [{ model: 'amazon.titan-embed-text-v2:0', costUsd: 0.00001 }];
+    delete response.completed;
+    await assert.rejects(execute(response), error => {
+      assert.deepEqual(error.providerUsage, response.providerUsage); return true;
+    });
+  });
+
 });

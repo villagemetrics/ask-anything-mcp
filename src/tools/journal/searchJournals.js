@@ -56,9 +56,10 @@ export class SearchJournalsTool {
     // Ensure child is selected (stateful - childId comes from session)
     const { childId, childName } = this.sessionManager.getSelectedChild(session.sessionId);
     
+    let response;
     try {
       // Call the journal search API endpoint
-      const response = await this.apiClient.searchJournals(childId, query, { limit, offset, mode, startDate, endDate, continuationToken });
+      response = await this.apiClient.searchJournals(childId, query, { limit, offset, mode, startDate, endDate, continuationToken });
       if (mode === 'insight_evidence') {
         const r = response.retrieval, p = response.pagination;
         const count = value => Number.isInteger(value) && value >= 0;
@@ -97,12 +98,14 @@ export class SearchJournalsTool {
       return transformed;
       
     } catch (error) {
+      if (response) { error.providerUsage = response.providerUsage || []; error.usageIncomplete = response.usageIncomplete ?? true; }
       logger.error('Failed to search journals', { 
         error: error.message,
         childId,
         queryCharCount: query.length
       });
-      throw new Error(`Failed to search journals: ${error.message}`);
+      if (['CANCELLED', 'DEADLINE_EXCEEDED'].includes(error.code)) throw error;
+      throw Object.assign(new Error(`Failed to search journals: ${error.message}`), { providerUsage: error.providerUsage, usageIncomplete: error.usageIncomplete });
     }
   }
 }

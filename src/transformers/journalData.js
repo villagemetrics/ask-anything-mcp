@@ -214,6 +214,8 @@ export function transformJournalSearchResults(rawResults, childName) {
       totalResults: rawResults.pagination?.total || transformedResults.length,
       results: transformedResults,
       pagination: rawResults.pagination,
+      ...(rawResults.providerUsage ? { providerUsage: rawResults.providerUsage, usageIncomplete: rawResults.usageIncomplete === true } : {}),
+      ...(rawResults.embeddingUsage ? { embeddingUsage: rawResults.embeddingUsage } : {}),
       ...(rawResults.searchExecutionId ? { searchExecutionId: rawResults.searchExecutionId, requestedFilter: rawResults.requestedFilter, effectiveFilter: rawResults.effectiveFilter, appliedFilter: rawResults.appliedFilter, retrieval: rawResults.retrieval, completed: rawResults.completed } : {}),
       message: `Found ${transformedResults.length} relevant entries. Use journal entry IDs for full details. Scoring fields help you decide which entries to retrieve: detailLevel (always present: Brief/Moderate/High), momentSignificance (≥0.55: Minor/Notable/Major key moment), crisisLevel (≥0.55: Elevated/High intensity/Crisis situation), effectiveStrategies (≥0.55: Helpful/Good/Highly effective strategies).`
     };
