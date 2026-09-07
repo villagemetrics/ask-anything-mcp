@@ -260,7 +260,9 @@ export class MCPCore {
       }
     }
 
-    logger.debug('Executing tool', { tool: toolName, args, sessionId: this.sessionId });
+    const loggedArgs = toolName === 'search_journal_entries' && args.mode === 'insight_evidence'
+      ? { mode: args.mode, hasContinuation: Boolean(args.continuationToken) } : args;
+    logger.debug('Executing tool', { tool: toolName, args: loggedArgs, sessionId: this.sessionId });
 
     try {
       const result = await this.toolRegistry.executeTool(toolName, args, this.sessionId);
@@ -270,7 +272,7 @@ export class MCPCore {
       logger.error('Tool execution failed', { 
         tool: toolName, 
         error: error.message,
-        args 
+        args: loggedArgs
       });
       throw error;
     }

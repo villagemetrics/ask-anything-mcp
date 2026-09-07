@@ -176,10 +176,11 @@ export class VMApiClient {
       const response = await this.client.post(`/v1/children/${childId}/journal/search`, {
         q: query,  // API expects 'q' not 'query'
         limit: options.limit || 10,
-        offset: options.offset || 0
+        offset: options.offset || 0,
+        ...(options.mode === 'insight_evidence' ? { mode: options.mode, startDate: options.startDate, endDate: options.endDate, continuationToken: options.continuationToken } : {})
       });
       logger.debug('Journal search API response received', { 
-        query,
+        queryCharCount: query.length,
         resultCount: response.data?.results?.length || 0,
         hasMore: response.data?.hasMore || false
       });
