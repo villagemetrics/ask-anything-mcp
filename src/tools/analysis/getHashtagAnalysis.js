@@ -1,3 +1,4 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../../lib/toolAccess.js';
 import { createLogger } from '../../utils/logger.js';
 import { VMApiClient } from '../../clients/vmApiClient.js';
 import { transformHashtagAnalysis } from '../../transformers/analysisData.js';
@@ -6,6 +7,7 @@ const logger = createLogger('GetHashtagAnalysisTool');
 
 export class GetHashtagAnalysisTool {
   constructor(sessionManager, apiOptions = {}) {
+    this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     this.sessionManager = sessionManager;
     this.apiClient = new VMApiClient(apiOptions);
   }
@@ -62,6 +64,7 @@ NOTE: Due to response length, you must specify ONE hashtag type per call. Use mu
   }
 
   async execute(args, session) {
+    assertToolAllowed(this.allowedTools, this.constructor.definition.name);
     const { hashtagType, timeRange } = args;
     
     if (!hashtagType) {

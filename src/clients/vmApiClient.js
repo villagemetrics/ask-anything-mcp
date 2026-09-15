@@ -1,3 +1,4 @@
+import { currentRemoteCall } from '../lib/remoteCalls.js';
 import axios from 'axios';
 import { createLogger } from '../utils/logger.js';
 
@@ -57,6 +58,27 @@ export class VMApiClient {
     // Add request interceptor to log outgoing requests
     this.client.interceptors.request.use(
       config => {
+        const call = currentRemoteCall();
+        if (call) {
+          call.check();
+          if (call.pinnedChildId) {
+            // Inspect the raw path before URL normalization can erase traversal.
+            const raw = config.url;
+            const target = new URL(raw, this.baseUrl);
+            const allowedPath = raw.startsWith(`/v1/children/${call.pinnedChildId}/`) ||
+              raw === `/v1/feed/${call.pinnedChildId}` || raw === '/v1/children/me/all' || raw === '/v1/product-feedback';
+            if (typeof raw !== 'string' || /[%\\?#]/.test(raw) || raw.split('/').some(part => part === '.' || part === '..') ||
+                target.origin !== new URL(this.baseUrl).origin || !allowedPath) {
+              throw Object.assign(new Error('RESEARCH_CHILD_MISMATCH'), { code: 'RESEARCH_CHILD_MISMATCH' });
+            }
+          }
+          config.signal = call.signal;
+          config.timeout = Math.max(1, Math.min(config.timeout, call.deadlineEpochMs - Date.now()));
+          config.headers['x-vm-deadline-epoch-ms'] = String(call.deadlineEpochMs);
+          config.headers['x-vm-cancellation-id'] = call.cancellationId;
+          if (call.automatedMetadata) config.headers['x-vm-automated-research'] = JSON.stringify(call.automatedMetadata);
+          config.remoteCallContext = call;
+        }
         const fullUrl = `${this.baseUrl}${config.url}`;
         logger.debug('API request starting', {
           method: config.method,
@@ -69,6 +91,8 @@ export class VMApiClient {
     // Add response interceptor for consistent success/error logging
     this.client.interceptors.response.use(
       response => {
+        try { response.config.remoteCallContext?.check(); }
+        catch (error) { throw Object.assign(error, { providerUsage: response.data?.providerUsage || [], usageIncomplete: true }); }
         const fullUrl = `${this.baseUrl}${response.config.url}`;
         logger.debug('API request successful', {
           method: response.config.method,
@@ -78,6 +102,18 @@ export class VMApiClient {
         return response;
       },
       error => {
+        const call = error.config?.remoteCallContext || currentRemoteCall();
+        const data = error.response?.data;
+        error.providerUsage = data?.providerUsage || error.providerUsage || [];
+        error.stageUsage = data?.stageUsage || error.stageUsage;
+        error.usageIncomplete = data?.usageIncomplete ?? true;
+        if (call) {
+          if (['CANCELLED', 'DEADLINE_EXCEEDED'].includes(data?.code)) call.cancel(data.code);
+          else if (['ECONNABORTED', 'ETIMEDOUT'].includes(error.code)) call.cancel('DEADLINE_EXCEEDED');
+          else if (error.code === 'ERR_CANCELED') call.cancel('CANCELLED');
+          try { call.check(); }
+          catch (cancelled) { throw Object.assign(cancelled, { providerUsage: error.providerUsage, usageIncomplete: true }); }
+        }
         const fullUrl = `${this.baseUrl}${error.config?.url || ''}`;
           
         const errorDetails = {
@@ -115,7 +151,7 @@ export class VMApiClient {
                    options.mcpToken ? 'options.mcpToken' :
                    process.env.VM_AUTH_TOKEN ? 'VM_AUTH_TOKEN env var' :
                    process.env.VM_MCP_TOKEN ? 'VM_MCP_TOKEN env var' : 'unknown',
-      tokenPrefix: this.token?.substring(0, 20) + '...' || 'none'
+      // Token contents are never logged.
     });
   }
 
@@ -176,10 +212,11 @@ export class VMApiClient {
       const response = await this.client.post(`/v1/children/${childId}/journal/search`, {
         q: query,  // API expects 'q' not 'query'
         limit: options.limit || 10,
-        offset: options.offset || 0
+        offset: options.offset || 0,
+        ...(options.mode === 'insight_evidence' ? { mode: options.mode, startDate: options.startDate, endDate: options.endDate, continuationToken: options.continuationToken } : {})
       });
       logger.debug('Journal search API response received', { 
-        query,
+        queryCharCount: query.length,
         resultCount: response.data?.results?.length || 0,
         hasMore: response.data?.hasMore || false
       });

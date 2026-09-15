@@ -1,3 +1,4 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../../lib/toolAccess.js';
 import { createLogger } from '../../utils/logger.js';
 import { VMApiClient } from '../../clients/vmApiClient.js';
 
@@ -5,6 +6,7 @@ const logger = createLogger('GetMedicationDetailedAnalysisTool');
 
 export class GetMedicationDetailedAnalysisTool {
   constructor(sessionManager, apiOptions = {}) {
+    this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     this.sessionManager = sessionManager;
     this.apiClient = new VMApiClient(apiOptions);
   }
@@ -42,6 +44,7 @@ Use this tool AFTER using get_medication_analysis to drill down into a specific 
   }
 
   async execute(args, session) {
+    assertToolAllowed(this.allowedTools, this.constructor.definition.name);
     const { cocktailId, timeRange } = args;
     
     if (!cocktailId) {

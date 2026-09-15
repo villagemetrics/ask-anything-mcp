@@ -8,3 +8,4 @@ export { TokenValidator } from '../auth/tokenValidator.js';
 
 // Export utility functions
 export { createLogger } from '../utils/logger.js';
+export { withRemoteCall } from './remoteCalls.js';

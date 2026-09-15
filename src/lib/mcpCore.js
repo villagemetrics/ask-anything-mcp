@@ -1,3 +1,5 @@
+import { normalizeAllowedTools } from './toolAccess.js';
+import { withRemoteCall } from './remoteCalls.js';
 import { createLogger } from '../utils/logger.js';
 import { ToolRegistry } from '../tools/registry.js';
 import { SessionManager } from '../session/sessionManager.js';
@@ -28,6 +30,7 @@ export class MCPCore {
       ...options
     };
     
+    this.options.allowedTools = normalizeAllowedTools(this.options.allowedTools);
     this.sessionId = null;
     this.userContext = null;
     
@@ -56,8 +59,7 @@ export class MCPCore {
         tokenType: apiOptions.tokenType,
         hasAuthToken: !!apiOptions.authToken,
         hasMcpToken: !!apiOptions.mcpToken,
-        authTokenLength: apiOptions.authToken?.length || 0,
-        authTokenPrefix: apiOptions.authToken?.substring(0, 20) + '...' || 'none'
+        authTokenLength: apiOptions.authToken?.length || 0
       });
       
       this.toolRegistry = new ToolRegistry(this.sessionManager, null, apiOptions, this.options);
@@ -223,6 +225,8 @@ export class MCPCore {
           const exportedClass = module[exportName];
           if (exportedClass && exportedClass.definition) {
             const definition = exportedClass.definition;
+            if (this.options.allowedTools !== undefined && !this.options.allowedTools.includes(definition.name)) continue;
+            if (definition.name === 'select_child' && this.options.allowChildSwitching === false) continue;
             toolDefinitions.push({
               name: definition.name,
               description: definition.description,
@@ -232,6 +236,7 @@ export class MCPCore {
           }
         }
       } catch (error) {
+        if (['CANCELLED', 'DEADLINE_EXCEEDED'].includes(error.code)) throw error;
         // Log warning but don't fail - some files might not be tool classes
         logger.warn(`Failed to import tool from ${toolFile}`, { error: error.message });
       }
@@ -247,7 +252,11 @@ export class MCPCore {
    * @param {Object} args - Arguments for the tool
    * @returns {Promise<any>} Tool execution result
    */
-  async executeTool(toolName, args = {}) {
+  executeTool(toolName, args = {}, remoteCallContext) {
+    return withRemoteCall(remoteCallContext, () => this._executeTool(toolName, args));
+  }
+
+  async _executeTool(toolName, args = {}) {
     if (this.options.schemaOnly) {
       throw new Error(`Cannot execute tools in schema-only mode. Tool '${toolName}' requires full MCP Core initialization.`);
     }
@@ -260,7 +269,9 @@ export class MCPCore {
       }
     }
 
-    logger.debug('Executing tool', { tool: toolName, args, sessionId: this.sessionId });
+    const loggedArgs = toolName === 'search_journal_entries' && args.mode === 'insight_evidence'
+      ? { mode: args.mode, hasContinuation: Boolean(args.continuationToken) } : args;
+    logger.debug('Executing tool', { tool: toolName, args: loggedArgs, sessionId: this.sessionId });
 
     try {
       const result = await this.toolRegistry.executeTool(toolName, args, this.sessionId);
@@ -270,7 +281,7 @@ export class MCPCore {
       logger.error('Tool execution failed', { 
         tool: toolName, 
         error: error.message,
-        args 
+        args: loggedArgs
       });
       throw error;
     }
@@ -281,7 +292,7 @@ export class MCPCore {
    * @param {Array} toolCalls - Array of {name, arguments} objects
    * @returns {Promise<Array>} Array of results
    */
-  async executeTools(toolCalls) {
+  async executeTools(toolCalls, remoteCallContext) {
     if (this.options.schemaOnly) {
       throw new Error('Cannot execute tools in schema-only mode. Tools require full MCP Core initialization.');
     }
@@ -293,13 +304,14 @@ export class MCPCore {
     const results = [];
     for (const toolCall of toolCalls) {
       try {
-        const result = await this.executeTool(toolCall.name, toolCall.arguments);
+        const result = await this.executeTool(toolCall.name, toolCall.arguments, remoteCallContext);
         results.push({
           toolName: toolCall.name,
           success: true,
           result
         });
       } catch (error) {
+        if (['CANCELLED', 'DEADLINE_EXCEEDED'].includes(error.code)) throw error;
         results.push({
           toolName: toolCall.name,
           success: false,

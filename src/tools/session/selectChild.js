@@ -1,3 +1,4 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../../lib/toolAccess.js';
 import { createLogger } from '../../utils/logger.js';
 import { VMApiClient } from '../../clients/vmApiClient.js';
 
@@ -5,6 +6,7 @@ const logger = createLogger('SelectChildTool');
 
 export class SelectChildTool {
   constructor(sessionManager, apiOptions = {}, mcpOptions = {}) {
+    this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     this.sessionManager = sessionManager;
     this.apiClient = new VMApiClient(apiOptions);
     this.mcpOptions = mcpOptions;
@@ -28,6 +30,7 @@ export class SelectChildTool {
   }
 
   async execute(args, session) {
+    assertToolAllowed(this.allowedTools, this.constructor.definition.name);
     const { childName } = args;
     
     if (!childName) {

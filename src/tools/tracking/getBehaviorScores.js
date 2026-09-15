@@ -1,3 +1,4 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../../lib/toolAccess.js';
 import { createLogger } from '../../utils/logger.js';
 import { VMApiClient } from '../../clients/vmApiClient.js';
 import { transformBehaviorData } from '../../transformers/behaviorData.js';
@@ -6,6 +7,7 @@ const logger = createLogger('GetBehaviorScoresTool');
 
 export class GetBehaviorScoresTool {
   constructor(sessionManager, apiOptions = {}) {
+    this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     this.sessionManager = sessionManager;
     this.apiClient = new VMApiClient(apiOptions);
   }
@@ -28,6 +30,7 @@ export class GetBehaviorScoresTool {
   }
 
   async execute(args, session) {
+    assertToolAllowed(this.allowedTools, this.constructor.definition.name);
     const { date } = args;
     
     if (!date) {

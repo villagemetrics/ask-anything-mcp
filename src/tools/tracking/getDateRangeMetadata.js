@@ -1,3 +1,4 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../../lib/toolAccess.js';
 import { createLogger } from '../../utils/logger.js';
 import { VMApiClient } from '../../clients/vmApiClient.js';
 import { transformDateRangeMetadata } from '../../transformers/dateRangeData.js';
@@ -6,6 +7,7 @@ const logger = createLogger('GetDateRangeMetadataTool');
 
 export class GetDateRangeMetadataTool {
   constructor(sessionManager, apiOptions = {}) {
+    this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     this.sessionManager = sessionManager;
     this.apiClient = new VMApiClient(apiOptions);
   }
@@ -23,6 +25,7 @@ export class GetDateRangeMetadataTool {
   }
 
   async execute(args, session) {
+    assertToolAllowed(this.allowedTools, this.constructor.definition.name);
     // Ensure child is selected
     const { childId, childName } = this.sessionManager.getSelectedChild(session.sessionId);
     

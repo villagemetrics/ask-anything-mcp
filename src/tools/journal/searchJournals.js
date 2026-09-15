@@ -1,3 +1,4 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../../lib/toolAccess.js';
 import { createLogger } from '../../utils/logger.js';
 import { VMApiClient } from '../../clients/vmApiClient.js';
 import { transformJournalSearchResults } from '../../transformers/journalData.js';
@@ -6,6 +7,7 @@ const logger = createLogger('SearchJournalsTool');
 
 export class SearchJournalsTool {
   constructor(sessionManager, apiOptions = {}) {
+    this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     this.sessionManager = sessionManager;
     this.apiClient = new VMApiClient(apiOptions);
   }
@@ -25,8 +27,12 @@ export class SearchJournalsTool {
             type: 'number',
             description: 'Maximum number of results to return (default: 10)',
             minimum: 1,
-            maximum: 50
+            maximum: 360
           },
+          mode: { type: 'string', enum: ['conversational', 'insight_evidence'], description: 'Strict insight evidence preserves bounded coverage and stable pagination.' },
+          startDate: { type: 'string', description: 'Inclusive observed day, YYYY-MM-DD; required in insight_evidence mode.' },
+          endDate: { type: 'string', description: 'Inclusive observed day, YYYY-MM-DD; required in insight_evidence mode.' },
+          continuationToken: { type: 'string', description: 'Opaque token from the previous strict page; keep query and dates unchanged.' },
           offset: {
             type: 'number',
             description: 'Offset for pagination (default: 0)',
@@ -39,22 +45,46 @@ export class SearchJournalsTool {
   }
 
   async execute(args, session) {
-    const { query, limit = 10, offset = 0 } = args;
+    assertToolAllowed(this.allowedTools, this.constructor.definition.name);
+    const { query, limit = 10, offset = 0, mode, startDate, endDate, continuationToken } = args;
     
     if (!query) {
       throw new Error('Search query is required');
     }
+    if (mode && !['conversational', 'insight_evidence'].includes(mode)) throw new Error('INVALID_SEARCH_MODE');
+    if (!Number.isInteger(limit) || limit < 1 || limit > (mode === 'insight_evidence' ? 360 : 50)) throw new Error('INVALID_SEARCH_LIMIT');
+    if (mode === 'insight_evidence' && (!startDate || !endDate || offset !== 0)) throw new Error('INVALID_STRICT_SEARCH_REQUEST');
+    if (mode !== 'insight_evidence' && (startDate || endDate || continuationToken)) throw new Error('STRICT_SEARCH_MODE_REQUIRED');
 
     // Ensure child is selected (stateful - childId comes from session)
     const { childId, childName } = this.sessionManager.getSelectedChild(session.sessionId);
     
+    let response;
     try {
       // Call the journal search API endpoint
-      const response = await this.apiClient.searchJournals(childId, query, { limit, offset });
+      response = await this.apiClient.searchJournals(childId, query, { limit, offset, mode, startDate, endDate, continuationToken });
+      if (mode === 'insight_evidence') {
+        const r = response.retrieval, p = response.pagination;
+        const count = value => Number.isInteger(value) && value >= 0;
+        if (!response.searchExecutionId || !r || !Array.isArray(response.results) ||
+            response.results.some(item => !item.document?.journalEntryId) ||
+            response.requestedFilter?.startDate !== startDate || response.requestedFilter?.endDate !== endDate ||
+            !response.effectiveFilter?.startDate || !response.effectiveFilter?.endDate ||
+            !['date_filtered_vector', 'legacy_post_filter'].includes(r.mode) ||
+            !['complete', 'legacy_or_unknown'].includes(r.dateCoverageStatus) ||
+            !count(r.candidateLimit) || r.candidateLimit === 0 || !count(r.rawCandidateCount) || !count(r.enrichmentFailureCount) ||
+            typeof r.truncated !== 'boolean' || typeof r.truncationKnown !== 'boolean' || !Array.isArray(r.incompleteReasons) ||
+            typeof response.completed !== 'boolean' || typeof p?.exhausted !== 'boolean' ||
+            (!p.exhausted && !p.nextContinuationToken)) throw new Error('STRICT_SEARCH_RESPONSE_INCOMPLETE');
+        const complete = response.effectiveFilter.startDate === startDate && response.effectiveFilter.endDate === endDate &&
+          r.mode === 'date_filtered_vector' && r.dateCoverageStatus === 'complete' && r.truncationKnown && !r.truncated &&
+          p.exhausted && r.enrichmentFailureCount === 0 && r.incompleteReasons.length === 0;
+        if (response.completed !== complete) throw new Error('STRICT_SEARCH_COMPLETION_INCONSISTENT');
+      }
       
       logger.debug('Journal search completed', { 
         childId, 
-        query: query.substring(0, 100),
+        queryCharCount: query.length,
         resultCount: response.results?.length || 0,
         totalResults: response.pagination?.total || 0
       });
@@ -71,12 +101,14 @@ export class SearchJournalsTool {
       return transformed;
       
     } catch (error) {
+      if (response) { error.providerUsage = response.providerUsage || []; error.stageUsage = response.stageUsage; error.usageIncomplete = response.usageIncomplete ?? true; }
       logger.error('Failed to search journals', { 
         error: error.message,
         childId,
-        query: query.substring(0, 100)
+        queryCharCount: query.length
       });
-      throw new Error(`Failed to search journals: ${error.message}`);
+      if (['CANCELLED', 'DEADLINE_EXCEEDED'].includes(error.code)) throw error;
+      throw Object.assign(new Error(`Failed to search journals: ${error.message}`), { providerUsage: error.providerUsage, stageUsage: error.stageUsage, usageIncomplete: error.usageIncomplete });
     }
   }
 }

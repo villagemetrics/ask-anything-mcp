@@ -1,9 +1,11 @@
+import { normalizeAllowedTools, assertToolAllowed } from '../../lib/toolAccess.js';
 import { createLogger } from '../../utils/logger.js';
 
 const logger = createLogger('GetProductHelpTool');
 
 export class GetProductHelpTool {
   constructor(sessionManager, apiOptions = {}) {
+    this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     this.sessionManager = sessionManager;
     this.baseUrl = 'https://docs.villagemetrics.com/raw';
     this.mappingUrl = 'https://docs.villagemetrics.com/mcp-file-mapping.json';
@@ -132,6 +134,7 @@ export class GetProductHelpTool {
   }
 
   async execute(args, session) {
+    assertToolAllowed(this.allowedTools, this.constructor.definition.name);
     const { section } = args;
 
     if (!section) {
