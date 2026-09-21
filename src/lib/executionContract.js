@@ -5,9 +5,10 @@
 // two copies live in llm-proxy-lambda/ and llm-proxy-client/src/). This package
 // is published publicly and cannot depend on @villagemetrics/llm-proxy-client,
 // so the constants and rejection strings are restated here rather than imported.
-// Parity is proven by behavior, not by byte comparison: the API's test asserts
-// that an envelope built here is exactly what the shared
-// `unwrapSingleProviderAttempt` accepts. Change one side and that test fails.
+// Parity is proven by behavior, not by byte comparison: the proactive-insights
+// generator's suite, the first consumer with this package and llm-proxy-client
+// both at their bounded versions, asserts that an envelope built here is exactly
+// what the shared `unwrapSingleProviderAttempt` accepts.
 const EXECUTION_CONTRACT = 'single_provider_attempt_v1';
 const MAX_PROVIDER_ATTEMPTS = 1;
 

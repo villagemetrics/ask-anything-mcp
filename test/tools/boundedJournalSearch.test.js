@@ -8,9 +8,9 @@ import {
   assertForwardableEnvelope, validatePaidSearchRequest, wrapSingleProviderAttempt
 } from '../../src/lib/executionContract.js';
 
-// The wire shape and the forwarding boundary's refusals. The envelope's parity
-// with the shared llm-proxy definition, and its behavior against the real API,
-// are proven in api/test/strict-journal-search.test.js.
+// The wire shape and the forwarding boundary's refusals. The API receiver is
+// proven in api/test/strict-journal-search.test.js; this envelope's parity with
+// the shared llm-proxy definition is proven by the generator that sends it.
 describe('Bounded proactive journal search envelope', function () {
   const strict = { q: 'synthetic history', limit: 10, offset: 0, mode: 'insight_evidence', startDate: '2024-01-01', endDate: '2024-01-02' };
   const args = { query: strict.q, mode: strict.mode, startDate: strict.startDate, endDate: strict.endDate };
