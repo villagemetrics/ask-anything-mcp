@@ -9,6 +9,11 @@ export class SearchJournalsTool {
   constructor(sessionManager, apiOptions = {}) {
     this.allowedTools = normalizeAllowedTools(apiOptions.allowedTools);
     this.sessionManager = sessionManager;
+    // Bounded execution is the host's decision, made once when the core is
+    // constructed. It is deliberately not a tool argument: a model choosing its
+    // own execution contract would be choosing a budget, which the design keeps
+    // out of model-authored search arguments.
+    this.boundedExecution = apiOptions.boundedSearchExecution === true;
     this.apiClient = new VMApiClient(apiOptions);
   }
 
@@ -55,6 +60,10 @@ export class SearchJournalsTool {
     if (!Number.isInteger(limit) || limit < 1 || limit > (mode === 'insight_evidence' ? 360 : 50)) throw new Error('INVALID_SEARCH_LIMIT');
     if (mode === 'insight_evidence' && (!startDate || !endDate || offset !== 0)) throw new Error('INVALID_STRICT_SEARCH_REQUEST');
     if (mode !== 'insight_evidence' && (startDate || endDate || continuationToken)) throw new Error('STRICT_SEARCH_MODE_REQUIRED');
+    // Conversational search issues further model calls (query parsing, semantic
+    // highlighting) that one provider attempt cannot cover, so a bounded host
+    // cannot make one. Ask Anything's own search path is unaffected.
+    if (this.boundedExecution && mode !== 'insight_evidence') throw new Error('BOUNDED_SEARCH_MODE_REQUIRED');
 
     // Ensure child is selected (stateful - childId comes from session)
     const { childId, childName } = this.sessionManager.getSelectedChild(session.sessionId);
@@ -62,7 +71,7 @@ export class SearchJournalsTool {
     let response;
     try {
       // Call the journal search API endpoint
-      response = await this.apiClient.searchJournals(childId, query, { limit, offset, mode, startDate, endDate, continuationToken });
+      response = await this.apiClient.searchJournals(childId, query, { limit, offset, mode, startDate, endDate, continuationToken, boundedExecution: this.boundedExecution });
       if (mode === 'insight_evidence') {
         const r = response.retrieval, p = response.pagination;
         const count = value => Number.isInteger(value) && value >= 0;
@@ -80,6 +89,15 @@ export class SearchJournalsTool {
           r.mode === 'date_filtered_vector' && r.dateCoverageStatus === 'complete' && r.truncationKnown && !r.truncated &&
           p.exhausted && r.enrichmentFailureCount === 0 && r.incompleteReasons.length === 0;
         if (response.completed !== complete) throw new Error('STRICT_SEARCH_COMPLETION_INCONSISTENT');
+        if (this.boundedExecution) {
+          // A bounded search is one query embedding and no more. A first page
+          // makes exactly that attempt; a continuation replays the stored
+          // snapshot and must invoke no model at all, so the caller can record
+          // the paid step against the page that actually made it.
+          const attempts = (response.embeddingUsage || []).length;
+          if (attempts !== (continuationToken ? 0 : 1)) throw new Error('BOUNDED_SEARCH_ATTEMPTS_UNEXPECTED');
+          if (!continuationToken && response.embeddingUsage[0]?.cacheOutcome !== 'bypassed') throw new Error('BOUNDED_SEARCH_CACHE_NOT_BYPASSED');
+        }
       }
       
       logger.debug('Journal search completed', { 
