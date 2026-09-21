@@ -37,7 +37,9 @@ export class ToolRegistry {
     this.autoUpdater = autoUpdater; // Store autoUpdater for pending update notifications
     
     this.allowedTools = normalizeAllowedTools(mcpOptions.allowedTools);
-    this.apiOptions = { ...apiOptions, allowedTools: this.allowedTools };
+    // Bounded proactive search is a host decision made at construction, alongside
+    // the closed tool list — never a model-supplied tool argument.
+    this.apiOptions = { ...apiOptions, allowedTools: this.allowedTools, boundedSearchExecution: mcpOptions.boundedSearchExecution === true };
     const create = (ToolClass, ...args) => {
       if (this.allowedTools !== undefined && !this.allowedTools.includes(ToolClass.definition.name)) return undefined;
       if (ToolClass === SelectChildTool && mcpOptions.allowChildSwitching === false) return undefined;

@@ -1,6 +1,7 @@
 import { currentRemoteCall } from '../lib/remoteCalls.js';
 import axios from 'axios';
 import { createLogger } from '../utils/logger.js';
+import { assertForwardableEnvelope, wrapSingleProviderAttempt } from '../lib/executionContract.js';
 
 const logger = createLogger('VMApiClient');
 
@@ -209,12 +210,19 @@ export class VMApiClient {
 
   async searchJournals(childId, query, options = {}) {
     try {
-      const response = await this.client.post(`/v1/children/${childId}/journal/search`, {
+      const search = {
         q: query,  // API expects 'q' not 'query'
         limit: options.limit || 10,
         offset: options.offset || 0,
         ...(options.mode === 'insight_evidence' ? { mode: options.mode, startDate: options.startDate, endDate: options.endDate, continuationToken: options.continuationToken } : {})
-      });
+      };
+      // A bounded proactive search travels as the envelope and nothing else, so a
+      // receiver without the contract rejects on its missing required `q` before
+      // any provider dispatch. Every page carries it, including continuations.
+      const body = options.boundedExecution
+        ? assertForwardableEnvelope(wrapSingleProviderAttempt({ ...search, forceBypassCache: true }))
+        : search;
+      const response = await this.client.post(`/v1/children/${childId}/journal/search`, body);
       logger.debug('Journal search API response received', { 
         queryCharCount: query.length,
         resultCount: response.data?.results?.length || 0,
