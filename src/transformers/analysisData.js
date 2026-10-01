@@ -247,6 +247,11 @@ export function transformBehaviorAnalysis(rawAnalysisData, rawGoalsData, childNa
   if (rawAnalysisData?.analysisData?.behaviorGoals) {
     result.behaviorGoalAnalysis = rawAnalysisData.analysisData.behaviorGoals.map(goal => ({
       goalName: goal.name,
+      // Archived goals appear in the analysis only for ranges that contain ratings for them
+      ...(goal.archived && {
+        archived: true,
+        _archivedNote: "This goal has been archived: it is no longer tracked on new journal entries, and it appears only because this time range has ratings for it."
+      }),
       averageScore: goal.averageScore,
       previousScore: goal.previousPeriodScore,
       scoreChange: goal.scoreChange,
