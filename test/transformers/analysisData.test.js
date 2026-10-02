@@ -103,6 +103,29 @@ describe('analysisData transformers - previous period context', function() {
       expect(result.behaviorGoalAnalysis[0]._previousScoreNote).to.contain('previousPeriodDateRange');
     });
 
+    it('marks an archived goal with archived: true and a note, and leaves active goals unmarked', function() {
+      const rawAnalysisData = {
+        analysisData: {
+          behaviorGoals: [
+            { name: 'Maintained Safety', archived: false, averageScore: 3.2, whatWorks: [], whatNotWorks: [] },
+            { name: 'Waited patiently', archived: true, averageScore: 2.5, whatWorks: [], whatNotWorks: [] }
+          ]
+        }
+      };
+
+      const result = transformBehaviorAnalysis(rawAnalysisData, [], childName, 'last_90_days');
+
+      const [active, archived] = result.behaviorGoalAnalysis;
+      expect(active.goalName).to.equal('Maintained Safety');
+      expect(active).to.not.have.property('archived');
+      expect(active).to.not.have.property('_archivedNote');
+      expect(archived.goalName).to.equal('Waited patiently');
+      expect(archived.archived).to.equal(true);
+      expect(archived.averageScore).to.equal(2.5);
+      expect(archived._archivedNote).to.contain('no longer tracked');
+      expect(archived._archivedNote).to.contain('has ratings for it');
+    });
+
     it('omits previousPeriodDateRange gracefully when absent (no crash)', function() {
       const rawAnalysisData = {
         analysisMeta: {
