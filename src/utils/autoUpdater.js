@@ -34,13 +34,20 @@ export class AutoUpdater {
       const packageData = await fetch.json(this.packageName);
       const latestVersion = packageData['dist-tags'].latest;
 
+      // Compare against what is installed, not what this process is running. Once this
+      // instance has installed an update it must not reinstall it every hour: several
+      // long-lived servers doing that concurrently overwrote the global install mid-link
+      // and left its bin non-executable.
+      const installedVersion = this.pendingUpdateVersion || this.currentVersion;
+
       logger.debug('Version comparison', {
         current: this.currentVersion,
+        installed: installedVersion,
         latest: latestVersion,
-        isNewer: semver.gt(latestVersion, this.currentVersion)
+        isNewer: semver.gt(latestVersion, installedVersion)
       });
 
-      if (semver.gt(latestVersion, this.currentVersion)) {
+      if (semver.gt(latestVersion, installedVersion)) {
         logger.info('Update available', {
           current: this.currentVersion,
           latest: latestVersion
